@@ -16,6 +16,7 @@
     "eslint": "^9"
   },
   "scripts": {
+    "build": "ui5 build --config ui5.yaml --clean-dest --dest dist",
     "deploy-config": "npx -p @sap/ux-ui5-tooling fiori add deploy-config cf"
   }
 }

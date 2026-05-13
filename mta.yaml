@@ -1,0 +1,179 @@
+_schema-version: "3.1"
+ID: sales-order-capture
+version: 1.0.0
+description: Automatic extraction of Sales Orders from documents via SAP Document AI
+
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci --production --ignore-scripts --legacy-peer-deps
+        - npx cds build --production
+
+modules:
+
+  # ── CAP Backend ───────────────────────────────────────────────────────────────
+  - name: sales-order-capture-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      memory: 512M
+      disk-quota: 1024M
+    properties:
+      CDS_ENV: production
+      NODE_ENV: production
+    build-parameters:
+      builder: npm
+      ignore:
+        - node_modules/
+    requires:
+      - name: sales-order-capture-db
+      - name: sales-order-capture-xsuaa
+      - name: sales-order-capture-destination
+      - name: sales-order-capture-connectivity
+      - name: sales-order-capture-docai
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: ${default-url}
+
+  # ── HDI DB Deployer ───────────────────────────────────────────────────────────
+  - name: sales-order-capture-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+    build-parameters:
+      builder: npm
+      ignore:
+        - node_modules/
+    requires:
+      - name: sales-order-capture-db
+
+  # ── Fiori Elements App ────────────────────────────────────────────────────────
+  - name: sales-order-capture-app
+    type: html5
+    path: app/sales-orders
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      build-result: dist
+      supported-platforms: []
+
+  # ── HTML5 Content Deployer ────────────────────────────────────────────────────
+  - name: sales-order-capture-app-content
+    type: com.sap.application.content
+    path: app
+    requires:
+      - name: sales-order-capture-html5-host
+        parameters:
+          content-target: true
+    build-parameters:
+      build-result: resources
+      requires:
+        - name: sales-order-capture-app
+          artifacts:
+            - salesorders.zip
+          target-path: resources/
+
+  # ── Approuter ────────────────────────────────────────────────────────────────
+  - name: sales-order-capture-approuter
+    type: approuter.nodejs
+    path: approuter
+    parameters:
+      memory: 256M
+      disk-quota: 512M
+    build-parameters:
+      builder: npm
+      ignore:
+        - node_modules/
+    properties:
+      destinations: >
+        [{"name":"srv-api","url":"~{srv-api/srv-url}","forwardAuthToken":true}]
+    requires:
+      - name: sales-order-capture-xsuaa
+      - name: sales-order-capture-html5-runtime
+      - name: srv-api
+
+resources:
+
+  # ── HANA HDI ──────────────────────────────────────────────────────────────────
+  - name: sales-order-capture-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+      service-name: sales-order-capture-hdi
+
+  # ── XSUAA ─────────────────────────────────────────────────────────────────────
+  - name: sales-order-capture-xsuaa
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      service-name: sales-order-capture-xsuaa
+      path: ./xs-security.json
+      config:
+        xsappname: sales-order-capture
+        tenant-mode: dedicated
+        oauth2-configuration:
+          redirect-uris:
+            - "https://*.${default-domain}/**"
+
+  # ── Destination ───────────────────────────────────────────────────────────────
+  - name: sales-order-capture-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+      service-name: sales-order-capture-destination
+      config:
+        HTML5Runtime_enabled: true
+        init_data:
+          instance:
+            existing_destinations_policy: update
+            destinations:
+              - Name: srv-api
+                URL: ~{srv-api/srv-url}
+                Authentication: NoAuthentication
+                Type: HTTP
+                ProxyType: Internet
+                HTML5.ForwardAuthToken: true
+                HTML5.DynamicDestination: true
+    requires:
+      - name: srv-api
+
+  # ── Connectivity ──────────────────────────────────────────────────────────────
+  - name: sales-order-capture-connectivity
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: connectivity
+      service-plan: lite
+      service-name: sales-order-capture-connectivity
+
+  # ── HTML5 App Host ─────────────────────────────────────────────────────────────
+  - name: sales-order-capture-html5-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+      service-name: sales-order-capture-html5-host
+
+  # ── HTML5 App Runtime ──────────────────────────────────────────────────────────
+  - name: sales-order-capture-html5-runtime
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-runtime
+      service-name: sales-order-capture-html5-runtime
+
+  # ── Document AI (existing service in the space) ────────────────────────────────
+  - name: sales-order-capture-docai
+    type: org.cloudfoundry.existing-service
+    parameters:
+      service-name: cf-documentai
+
+parameters:
+  enable-parallel-deployments: true

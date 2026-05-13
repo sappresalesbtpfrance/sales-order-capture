@@ -46,6 +46,16 @@
           "authentication": "BasicAuthentication",
           "username": "S4H_SD_DEM",
           "password": "Welcome1"
+        },
+        "[production]": {
+          "kind": "odata-v2",
+          "model": "srv/external/API_SALES_ORDER_SRV",
+          "csrf": true,
+          "csrfInBatch": true,
+          "credentials": {
+            "destination": "APIS4",
+            "path": "/sap/opu/odata/sap/API_SALES_ORDER_SRV"
+          }
         }
       },
       "DOCUMENT_AI": {
