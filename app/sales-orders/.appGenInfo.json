@@ -1,0 +1,28 @@
+{
+  "generationParameters": {
+    "generationDate": "Wed May 13 2026 11:37:54 GMT+0200 (heure d’été d’Europe centrale)",
+    "generatorPlatform": "CLI",
+    "serviceType": "Local CAP",
+    "metadataFilename": "",
+    "serviceUrl": "http://localhost:4004/odata/v4/sales-order-capture/",
+    "appName": "sales-orders",
+    "appTitle": "Create Sales Orders - Automatic Extraction",
+    "appDescription": "Automatic extraction of Sales Orders from documents via SAP Document AI",
+    "appNamespace": "",
+    "ui5Theme": "sap_horizon",
+    "ui5Version": "1.136.7",
+    "enableEslint": true,
+    "enableTypeScript": false,
+    "showMockDataInfo": false,
+    "generatorVersion": "1.23.0",
+    "template": "List Report Page V4",
+    "generatorName": "SAP Fiori Application Generator",
+    "entityRelatedConfig": [
+      {
+        "type": "Main Entity",
+        "value": "SalesOrderRequests"
+      }
+    ],
+    "launchText": "To launch the generated app, start your CAP project:  and navigate to the following location in your browser:\n\nhttp://localhost:4004/sales-orders/webapp/index.html"
+  }
+}

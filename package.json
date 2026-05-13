@@ -22,7 +22,8 @@
   "scripts": {
     "start": "cds-serve",
     "dev": "cds watch",
-    "build": "cds build --production"
+    "build": "cds build --production",
+    "watch-sales-orders": "cds watch --open salesorders/index.html?sap-ui-xx-viewCache=false --livereload false"
   },
   "cds": {
     "requires": {
@@ -64,5 +65,11 @@
     "fiori": {
       "lean_draft": true
     }
-  }
+  },
+  "workspaces": [
+    "app/*"
+  ],
+  "sapux": [
+    "app/sales-orders"
+  ]
 }

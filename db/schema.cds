@@ -22,71 +22,61 @@ type SimulationStatus : String(20) enum {
 
 // ── Sales Order Request (header) ──────────────────────────────────────────────
 entity SalesOrderRequests : cuid, managed {
-  // Processing metadata
-  requestNumber       : String(20);
-  processingStatus    : ProcessingStatus default 'NEW';
-  simulationStatus    : SimulationStatus default 'NOT_SIMULATED';
+  requestNumber       : String(20)  @title: 'Sales Order Request';
+  processingStatus    : ProcessingStatus default 'NEW'  @title: 'Processing Status';
+  simulationStatus    : SimulationStatus default 'NOT_SIMULATED'  @title: 'Order Simulation';
   virtual processingStatusCriticality : Integer;
 
-  // Source file
-  fileName            : String(255);
+  fileName            : String(255) @title: 'File Name';
   attachments         : Composition of many Attachments;
 
-  // Created Sales Order (once confirmed)
-  salesOrder          : String(10);
+  salesOrder          : String(10)  @title: 'Sales Order';
 
-  // Header — Basic Sales Data
-  salesOrganization   : String(4);
-  distributionChannel : String(2);
-  division            : String(2);
-  salesOrderType      : String(4);
-  companyCode         : String(4);
+  salesOrganization   : String(4)   @title: 'Sales Organization';
+  distributionChannel : String(2)   @title: 'Distribution Channel';
+  division            : String(2)   @title: 'Division';
+  salesOrderType      : String(4)   @title: 'Sales Order Type';
+  companyCode         : String(4)   @title: 'Company Code';
 
-  // Header — Sold-to Party
-  soldToParty         : String(10);
-  soldToPartyName     : String(80);
-  soldToStreet        : String(60);
-  soldToHouseNumber   : String(10);
-  soldToPostalCode    : String(10);
-  soldToCity          : String(40);
-  soldToCountry       : String(3);
+  soldToParty         : String(10)  @title: 'Sold-to Party';
+  soldToPartyName     : String(80)  @title: 'Name';
+  soldToStreet        : String(60)  @title: 'Street';
+  soldToHouseNumber   : String(10)  @title: 'House Number';
+  soldToPostalCode    : String(10)  @title: 'Postal Code';
+  soldToCity          : String(40)  @title: 'City';
+  soldToCountry       : String(3)   @title: 'Country';
 
-  // Header — Ship-to Party
-  shipToParty         : String(10);
-  shipToPartyName     : String(80);
-  shipToStreet        : String(60);
-  shipToHouseNumber   : String(10);
-  shipToPostalCode    : String(10);
-  shipToCity          : String(40);
-  shipToCountry       : String(3);
+  shipToParty         : String(10)  @title: 'Ship-to Party';
+  shipToPartyName     : String(80)  @title: 'Name';
+  shipToStreet        : String(60)  @title: 'Street';
+  shipToHouseNumber   : String(10)  @title: 'House Number';
+  shipToPostalCode    : String(10)  @title: 'Postal Code';
+  shipToCity          : String(40)  @title: 'City';
+  shipToCountry       : String(3)   @title: 'Country';
 
-  // Header — Extracted Purchasing Data
-  purchaseOrderByCustomer     : String(35);
-  purchaseOrderByCustomerDate : Date;
-  requestedDeliveryDate       : Date;
-  transactionCurrency         : String(5);
+  purchaseOrderByCustomer     : String(35) @title: 'Purchase Order Number';
+  purchaseOrderByCustomerDate : Date       @title: 'Purchase Order Date';
+  requestedDeliveryDate       : Date       @title: 'Requested Delivery Date';
+  transactionCurrency         : String(5)  @title: 'Document Currency';
 
-  // Net values
-  extractedNetAmount  : Decimal(15,2);
-  simulatedNetAmount  : Decimal(15,2);
+  extractedNetAmount  : Decimal(15,2) @title: 'Extracted Net Value';
+  simulatedNetAmount  : Decimal(15,2) @title: 'Simulated Net Value';
 
-  // Extraction log
-  extractionLog       : LargeString;
-  lastSimulatedAt     : Timestamp;
+  extractionLog       : LargeString   @title: 'Extraction Log';
+  lastSimulatedAt     : Timestamp     @title: 'Last Simulated On';
 
-  // Items
   items               : Composition of many SalesOrderRequestItems on items.request = $self;
 }
 
 // ── Sales Order Request Items ─────────────────────────────────────────────────
 entity SalesOrderRequestItems : cuid {
-  request             : Association to SalesOrderRequests;
-  itemNumber          : String(6);
-  material            : String(40);
-  materialDescription : String(40);
-  requestedQuantity   : Decimal(13,3);
-  requestedQuantityUnit : String(3);
-  netAmount           : Decimal(15,2);
-  plant               : String(4);
-  storageLocation     : String(4);
+  request               : Association to SalesOrderRequests;
+  itemNumber            : String(6)     @title: 'Item';
+  material              : String(40)    @title: 'Material';
+  materialDescription   : String(40)    @title: 'Description';
+  requestedQuantity     : Decimal(13,3) @title: 'Quantity';
+  requestedQuantityUnit : String(3)     @title: 'Unit';
+  netAmount             : Decimal(15,2) @title: 'Net Amount';
+  plant                 : String(4)     @title: 'Plant';
+  storageLocation       : String(4)     @title: 'Storage Location';
 }
