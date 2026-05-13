@@ -1,5 +1,9 @@
 {
   "_version": "1.73.1",
+  "sap.cloud": {
+    "public": true,
+    "service": "sales.order.capture"
+  },
   "sap.app": {
     "id": "salesorders",
     "type": "application",
