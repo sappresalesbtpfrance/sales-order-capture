@@ -1,0 +1,68 @@
+{
+  "name": "sales-order-capture",
+  "version": "1.0.0",
+  "description": "Automatic extraction of Sales Orders from documents via SAP Document AI",
+  "repository": "<Add your repository here>",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@cap-js/attachments": "^1",
+    "@cap-js/hana": "^1",
+    "@sap/cds": "^9",
+    "@sap-cloud-sdk/connectivity": "^3",
+    "@sap-cloud-sdk/http-client": "^3",
+    "@sap-cloud-sdk/resilience": "^3",
+    "express": "^4"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^2",
+    "@sap/cds-dk": "^9",
+    "cds-plugin-ui5": "^0"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "dev": "cds watch",
+    "build": "cds build --production"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite",
+        "credentials": {
+          "url": ":memory:"
+        },
+        "[production]": {
+          "kind": "hana"
+        }
+      },
+      "API_SALES_ORDER_SRV": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_SALES_ORDER_SRV",
+        "csrf": true,
+        "csrfInBatch": true,
+        "credentials": {
+          "url": "http://vhcals4hci.dummy.nodomain:50000/sap/opu/odata/sap/API_SALES_ORDER_SRV",
+          "authentication": "BasicAuthentication",
+          "username": "S4H_SD_DEM",
+          "password": "Welcome1"
+        }
+      },
+      "DOCUMENT_AI": {
+        "kind": "rest",
+        "credentials": {
+          "url": "https://eu10.doc.cloud.sap",
+          "authentication": "OAuth2ClientCredentials",
+          "tokenServiceUrl": "https://test-joule-demo-58bwtnjw.authentication.eu10.hana.ondemand.com/oauth/token",
+          "clientId": "sb-1ae76dbc-9118-4eb0-83fd-570fe7874ac4!b632727|na-f20548c0-157d-417b-8bbb-1c9f35ecfb2d!b20821",
+          "clientSecret": "4cb2f1f5-d67e-41c9-9240-ac5c647260ba$pxX9IaxfGOjju7bBm5iwbFc-KdOrNEUpPL2Bz2XwWQg="
+        }
+      },
+      "attachments": {
+        "kind": "db"
+      }
+    },
+    "fiori": {
+      "lean_draft": true
+    }
+  }
+}

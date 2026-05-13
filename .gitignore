@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# CAP build output
+gen/
+dist/
+
+# MTA build output
+mta_archives/
+.mta_build_tmp/
+
+# SQLite local DB
+*.db
+*.sqlite
+
+# Environment / secrets
+default-env.json
+.env
+*.env
+
+# Editor
+.DS_Store
+.vscode/
+*.code-workspace
+
+# Logs
+*.log
