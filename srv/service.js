@@ -16,12 +16,12 @@ const SIMULATION_STATUS = {
 };
 
 const STATUS_CRITICALITY = {
-  [PROCESSING_STATUS.NEW]:             2,  // grey
-  [PROCESSING_STATUS.IN_PROCESS]:      2,  // grey
-  [PROCESSING_STATUS.DATA_COMPLETE]:   3,  // green
-  [PROCESSING_STATUS.DATA_INCOMPLETE]: 1,  // red
-  [PROCESSING_STATUS.COMPLETED]:       3,  // green
-  [PROCESSING_STATUS.ERROR]:           1,  // red
+  [PROCESSING_STATUS.NEW]:             2,
+  [PROCESSING_STATUS.IN_PROCESS]:      2,
+  [PROCESSING_STATUS.DATA_COMPLETE]:   3,
+  [PROCESSING_STATUS.DATA_INCOMPLETE]: 1,
+  [PROCESSING_STATUS.COMPLETED]:       3,
+  [PROCESSING_STATUS.ERROR]:           1,
 };
 
 module.exports = cds.service.impl(async function () {
@@ -37,26 +37,28 @@ module.exports = cds.service.impl(async function () {
   // ── Upload multiple files ───────────────────────────────────────────────────
   this.on('uploadFiles', async (req) => {
     const { files } = req.data;
-    if (!files?.length) req.error(400, 'No files provided');
+    if (!files?.length) return req.error(400, 'No files provided');
 
     const results = [];
     const errors  = [];
 
     await Promise.all(files.map(async (file) => {
       try {
-        // 1) Create SalesOrderRequest record
-        const { ID } = await INSERT.into(SalesOrderRequests).entries({
+        const record = await INSERT.into(SalesOrderRequests).entries({
           fileName:        file.fileName,
           processingStatus: PROCESSING_STATUS.IN_PROCESS,
         });
+        const ID = record.ID ?? record[0]?.ID;
 
-        // 2) Trigger Document AI extraction (async — fire and don't await)
-        _extractAsync(ID, file).catch((err) => {
+        _extractAsync(ID, file).catch(async (err) => {
           cds.log('sales-order-capture').error(`Extraction failed for ${file.fileName}:`, err);
-          UPDATE(SalesOrderRequests, ID).with({ processingStatus: PROCESSING_STATUS.ERROR, extractionLog: err.message });
+          await UPDATE(SalesOrderRequests, ID).with({
+            processingStatus: PROCESSING_STATUS.ERROR,
+            extractionLog:    err.message,
+          });
         });
 
-        results.push({ ID, fileName: file.fileName, processingStatus: PROCESSING_STATUS.IN_PROCESS });
+        results.push(ID);
       } catch (err) {
         errors.push({ fileName: file.fileName, error: err.message });
       }
@@ -66,7 +68,7 @@ module.exports = cds.service.impl(async function () {
       req.notify(207, `${results.length} file(s) accepted, ${errors.length} failed: ${errors.map(e => e.fileName).join(', ')}`);
     }
 
-    return SELECT.from(SalesOrderRequests).where({ ID: { in: results.map(r => r.ID) } });
+    return SELECT.from(SalesOrderRequests).where({ ID: { in: results } });
   });
 
   // ── Retry extraction ────────────────────────────────────────────────────────
@@ -75,10 +77,17 @@ module.exports = cds.service.impl(async function () {
     const record = await SELECT.one.from(SalesOrderRequests, ID);
     if (!record) return req.error(404, 'Record not found');
 
-    await UPDATE(SalesOrderRequests, ID).with({ processingStatus: PROCESSING_STATUS.IN_PROCESS, extractionLog: null });
-    _extractAsync(ID, { fileName: record.fileName }).catch((err) => {
+    await UPDATE(SalesOrderRequests, ID).with({
+      processingStatus: PROCESSING_STATUS.IN_PROCESS,
+      extractionLog:    null,
+    });
+
+    _extractAsync(ID, { fileName: record.fileName }).catch(async (err) => {
       cds.log('sales-order-capture').error(`Retry extraction failed for ${record.fileName}:`, err);
-      UPDATE(SalesOrderRequests, ID).with({ processingStatus: PROCESSING_STATUS.ERROR, extractionLog: err.message });
+      await UPDATE(SalesOrderRequests, ID).with({
+        processingStatus: PROCESSING_STATUS.ERROR,
+        extractionLog:    err.message,
+      });
     });
 
     return SELECT.one.from(SalesOrderRequests, ID);
@@ -87,15 +96,23 @@ module.exports = cds.service.impl(async function () {
   // ── Simulate creation ───────────────────────────────────────────────────────
   this.on('simulateCreation', SalesOrderRequests, async (req) => {
     const { ID } = req.params[0];
-    const record = await SELECT.one.from(SalesOrderRequests, ID).columns('*');
+    const [record, items] = await Promise.all([
+      SELECT.one.from(SalesOrderRequests, ID),
+      SELECT.from(SalesOrderRequestItems).where({ request_ID: ID }),
+    ]);
     if (!record) return req.error(404, 'Record not found');
 
     try {
       const s4 = await cds.connect.to('API_SALES_ORDER_SRV');
-      const soPayload = _buildS4Payload(record, await _getItems(ID));
+      const payload = _buildS4Payload(record, items);
 
-      // Simulation via $value check — S/4 returns order data without persisting
-      const simResult = await s4.post('/A_SalesOrder', soPayload, { headers: { Prefer: 'return=representation' } });
+      // POST with sap-simulate=true header triggers S/4 order simulation without persisting
+      const simResult = await s4.send({
+        method: 'POST',
+        path:   '/A_SalesOrder',
+        data:   payload,
+        headers: { 'sap-simulate': 'true' },
+      });
 
       await UPDATE(SalesOrderRequests, ID).with({
         simulationStatus:   SIMULATION_STATUS.SUCCESSFUL,
@@ -116,17 +133,25 @@ module.exports = cds.service.impl(async function () {
   // ── Create Sales Order ──────────────────────────────────────────────────────
   this.on('createSalesOrder', SalesOrderRequests, async (req) => {
     const { ID } = req.params[0];
-    const record = await SELECT.one.from(SalesOrderRequests, ID).columns('*');
+    const [record, items] = await Promise.all([
+      SELECT.one.from(SalesOrderRequests, ID),
+      SELECT.from(SalesOrderRequestItems).where({ request_ID: ID }),
+    ]);
     if (!record) return req.error(404, 'Record not found');
     if (record.salesOrder) return req.error(409, `Sales Order ${record.salesOrder} already created`);
 
     try {
-      const s4   = await cds.connect.to('API_SALES_ORDER_SRV');
-      const items = await _getItems(ID);
-      const soPayload = _buildS4Payload(record, items);
+      const s4 = await cds.connect.to('API_SALES_ORDER_SRV');
+      const payload = _buildS4Payload(record, items);
 
-      const created = await s4.run(INSERT.into('A_SalesOrder').entries(soPayload));
-      const salesOrderId = created?.SalesOrder ?? created?.[0]?.SalesOrder;
+      const created = await s4.send({
+        method: 'POST',
+        path:   '/A_SalesOrder',
+        data:   payload,
+      });
+
+      const salesOrderId = created?.SalesOrder;
+      if (!salesOrderId) throw new Error('S/4HANA did not return a SalesOrder ID');
 
       await UPDATE(SalesOrderRequests, ID).with({
         salesOrder:       salesOrderId,
@@ -145,34 +170,31 @@ module.exports = cds.service.impl(async function () {
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  async function _getItems(requestId) {
-    return SELECT.from(SalesOrderRequestItems).where({ request_ID: requestId });
-  }
-
   function _buildS4Payload(header, items) {
     return {
-      SalesOrderType:           header.salesOrderType      || 'OR',
-      SalesOrganization:        header.salesOrganization,
-      DistributionChannel:      header.distributionChannel,
-      OrganizationDivision:     header.division,
-      SoldToParty:              header.soldToParty,
-      PurchaseOrderByCustomer:  header.purchaseOrderByCustomer,
-      RequestedDeliveryDate:    header.requestedDeliveryDate,
-      TransactionCurrency:      header.transactionCurrency,
-      to_Item: items.map((item, idx) => ({
-        SalesOrderItem:          String((idx + 1) * 10).padStart(6, '0'),
-        Material:                item.material,
-        RequestedQuantity:       item.requestedQuantity,
-        RequestedQuantityUnit:   item.requestedQuantityUnit,
-        Plant:                   item.plant,
-      })),
+      SalesOrderType:          header.salesOrderType      || 'OR',
+      SalesOrganization:       header.salesOrganization,
+      DistributionChannel:     header.distributionChannel,
+      OrganizationDivision:    header.division,
+      SoldToParty:             header.soldToParty,
+      PurchaseOrderByCustomer: header.purchaseOrderByCustomer,
+      RequestedDeliveryDate:   header.requestedDeliveryDate,
+      TransactionCurrency:     header.transactionCurrency,
+      to_Item: {
+        results: items.map((item, idx) => ({
+          SalesOrderItem:        String((idx + 1) * 10).padStart(6, '0'),
+          Material:              item.material,
+          RequestedQuantity:     String(item.requestedQuantity),
+          RequestedQuantityUnit: item.requestedQuantityUnit,
+          Plant:                 item.plant,
+        })),
+      },
     };
   }
 
   async function _extractAsync(requestId, file) {
-    // Placeholder: Document AI extraction will be implemented once
-    // the Document AI schema/model is confirmed in the tenant.
-    // For now, marks the record as DATA_INCOMPLETE so the user can edit manually.
+    // Document AI extraction — implemented once schema/model confirmed in the tenant.
+    // Until then, marks the record as DATA_INCOMPLETE for manual entry.
     await UPDATE(SalesOrderRequests, requestId).with({
       processingStatus: PROCESSING_STATUS.DATA_INCOMPLETE,
       extractionLog:    'Document AI extraction not yet configured — please fill in data manually.',

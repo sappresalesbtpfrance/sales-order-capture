@@ -1,4 +1,5 @@
 using { soc } from '../db/schema';
+using { API_SALES_ORDER_SRV } from './external/API_SALES_ORDER_SRV';
 
 service SalesOrderCaptureService @(path: '/odata/v4/sales-order-capture') {
 
