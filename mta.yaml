@@ -78,24 +78,37 @@ modules:
             - salesorders.zip
           target-path: resources/
 
-  # ── Approuter ────────────────────────────────────────────────────────────────
-  - name: sales-order-capture-approuter
-    type: approuter.nodejs
-    path: approuter
-    parameters:
-      memory: 256M
-      disk-quota: 512M
-    build-parameters:
-      builder: npm
-      ignore:
-        - node_modules/
-    properties:
-      destinations: >
-        [{"name":"srv-api","url":"~{srv-api/srv-url}","forwardAuthToken":true}]
+  # ── Destination Content (registers srv-api in managed approuter) ──────────────
+  - name: sales-order-capture-destination-content
+    type: com.sap.application.content
     requires:
+      - name: sales-order-capture-destination
+        parameters:
+          content-target: true
+      - name: sales-order-capture-html5-host
+        parameters:
+          service-key:
+            name: sales-order-capture-html5-host-key
       - name: sales-order-capture-xsuaa
-      - name: sales-order-capture-html5-runtime
-      - name: srv-api
+        parameters:
+          service-key:
+            name: sales-order-capture-xsuaa-key
+    parameters:
+      content:
+        instance:
+          destinations:
+            - Name: sales-order-capture-html5-host
+              ServiceInstanceName: sales-order-capture-html5-host
+              ServiceKeyName: sales-order-capture-html5-host-key
+              sap.cloud.service: sales.order.capture
+            - Authentication: OAuth2UserTokenExchange
+              Name: sales-order-capture-xsuaa
+              ServiceInstanceName: sales-order-capture-xsuaa
+              ServiceKeyName: sales-order-capture-xsuaa-key
+              sap.cloud.service: sales.order.capture
+          existing_destinations_policy: update
+    build-parameters:
+      no-source: true
 
 resources:
 
