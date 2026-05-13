@@ -34,6 +34,11 @@
           "signature": {
             "parameters": {},
             "additionalParameters": "allowed"
+          },
+          "resolutionResult": {
+            "applicationType": "SAPUI5",
+            "additionalInformation": "SAPUI5.Component=salesorders",
+            "url": "."
           }
         }
       }
