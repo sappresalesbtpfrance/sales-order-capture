@@ -41,9 +41,10 @@ annotate service.SalesOrderRequests with @(
             Criticality: (simulationStatus = 'SUCCESSFUL' ? 3 : simulationStatus = 'FAILED' ? 1 : 0),
         },
         {
-            $Type: 'UI.DataField',
-            Label: 'Sales Order',
-            Value: salesOrder,
+            $Type:  'UI.DataFieldWithUrl',
+            Label:  'Sales Order',
+            Value:  salesOrder,
+            Url:    salesOrderUrl,
         },
     ],
 
@@ -102,9 +103,10 @@ annotate service.SalesOrderRequests with @(
                 Value: companyCode,
             },
             {
-                $Type: 'UI.DataField',
-                Label: 'Sales Order',
-                Value: salesOrder,
+                $Type:  'UI.DataFieldWithUrl',
+                Label:  'Sales Order',
+                Value:  salesOrder,
+                Url:    salesOrderUrl,
             },
             {
                 $Type: 'UI.DataField',

@@ -27,6 +27,7 @@ entity SalesOrderRequests : cuid, managed {
   simulationStatus    : SimulationStatus default 'NOT_SIMULATED'  @title: 'Order Simulation';
   virtual processingStatusCriticality : Integer;
   virtual workflowStep                : Integer; // 1=uploaded 2=extracted 3=simulated 4=completed
+  virtual salesOrderUrl               : String;
 
   fileName            : String(255) @title: 'File Name';
   attachments         : Composition of many Attachments;

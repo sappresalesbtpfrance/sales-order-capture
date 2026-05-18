@@ -28,13 +28,15 @@ module.exports = cds.service.impl(async function () {
   const { SalesOrderRequests, SalesOrderRequestItems } = this.entities;
 
   // ── Compute virtual fields ─────────────────────────────────────────────────
+  const S4_FLP_BASE = 'https://vhcals4hci.dummy.nodomain:44301/sap/bc/ui5_ui5/ui2/ushell/shells/abap/FioriLaunchpad.html';
+
   const computeVirtualFields = (results) => {
     for (const req of [results].flat()) {
       req.processingStatusCriticality = STATUS_CRITICALITY[req.processingStatus] ?? 0;
 
-      // workflowStep: 1=uploaded, 2=extracted, 3=simulated, 4=completed
       if (req.salesOrder) {
-        req.workflowStep = 4;
+        req.workflowStep   = 4;
+        req.salesOrderUrl  = `${S4_FLP_BASE}#SalesOrder-editSalesOrderV2?SalesOrder=${req.salesOrder}&/SalesOrderManage('${req.salesOrder}')`;
       } else if (req.simulationStatus === SIMULATION_STATUS.SUCCESSFUL) {
         req.workflowStep = 3;
       } else if ([
