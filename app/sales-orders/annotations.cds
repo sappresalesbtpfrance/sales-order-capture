@@ -35,9 +35,10 @@ annotate service.SalesOrderRequests with @(
             Inline: false,
         },
         {
-            $Type: 'UI.DataField',
-            Label: 'Order Simulation',
-            Value: simulationStatus,
+            $Type:       'UI.DataField',
+            Label:       'Order Simulation',
+            Value:       simulationStatus,
+            Criticality: (simulationStatus = 'SUCCESSFUL' ? 3 : simulationStatus = 'FAILED' ? 1 : 0),
         },
         {
             $Type: 'UI.DataField',
@@ -90,9 +91,10 @@ annotate service.SalesOrderRequests with @(
                 Criticality: processingStatusCriticality,
             },
             {
-                $Type: 'UI.DataField',
-                Label: 'Order Simulation',
-                Value: simulationStatus,
+                $Type:       'UI.DataField',
+                Label:       'Order Simulation',
+                Value:       simulationStatus,
+                Criticality: (simulationStatus = 'SUCCESSFUL' ? 3 : simulationStatus = 'FAILED' ? 1 : 0),
             },
             {
                 $Type: 'UI.DataField',
