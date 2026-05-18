@@ -65,6 +65,7 @@ entity SalesOrderRequests : cuid, managed {
   simulatedNetAmount  : Decimal(15,2) @title: 'Simulated Net Value';
 
   extractionLog       : LargeString   @title: 'Extraction Log';
+  docAiSchemaId       : String(255)   @title: 'Document AI Schema';
   lastSimulatedAt     : Timestamp     @title: 'Last Simulated On';
 
   items               : Composition of many SalesOrderRequestItems on items.request = $self;

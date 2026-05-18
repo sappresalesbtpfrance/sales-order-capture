@@ -1,6 +1,11 @@
 using SalesOrderCaptureService as service from '../../srv/service';
 using from '../../srv/external/API_SALESORGANIZATION_SRV';
 using from '../../srv/external/API_DISTRIBUTIONCHANNEL_SRV';
+using from '../../srv/external/API_BUSINESS_PARTNER';
+using from '../../srv/external/API_DIVISION_SRV';
+using from '../../srv/external/API_COMPANYCODE_SRV';
+using from '../../srv/external/API_PLANT_SRV';
+using from '../../srv/external/API_COUNTRY_SRV';
 
 // ── Value Help annotations ────────────────────────────────────────────────────
 annotate service.SalesOrderRequests with {
@@ -22,6 +27,127 @@ annotate service.SalesOrderRequests with {
       Parameters: [
         { $Type: 'Common.ValueListParameterOut', LocalDataProperty: distributionChannel, ValueListProperty: 'DistributionChannel' },
         { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'DistributionChannelName' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+
+  soldToParty @(
+    Common.ValueList: {
+      CollectionPath: 'VH_Customer',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: soldToParty, ValueListProperty: 'Customer' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'CustomerName' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+
+  shipToParty @(
+    Common.ValueList: {
+      CollectionPath: 'VH_Customer',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: shipToParty, ValueListProperty: 'Customer' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'CustomerName' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+
+  division @(
+    Common.ValueList: {
+      CollectionPath: 'VH_Division',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: division, ValueListProperty: 'Division' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'DivisionName' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+
+  companyCode @(
+    Common.ValueList: {
+      CollectionPath: 'VH_CompanyCode',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: companyCode, ValueListProperty: 'CompanyCode' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'CompanyCodeName' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+
+  transactionCurrency @(
+    Common.ValueList: {
+      CollectionPath: 'Currencies',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: transactionCurrency, ValueListProperty: 'code' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+
+  soldToCountry @(
+    Common.ValueList: {
+      CollectionPath: 'VH_Country',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: soldToCountry, ValueListProperty: 'Country' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'CountryName' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+
+  shipToCountry @(
+    Common.ValueList: {
+      CollectionPath: 'VH_Country',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: shipToCountry, ValueListProperty: 'Country' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'CountryName' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+
+  processingStatus @(
+    Common.ValueList: {
+      CollectionPath: 'VH_ProcessingStatus',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: processingStatus, ValueListProperty: 'code' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' },
+      ],
+    },
+    Common.ValueListWithFixedValues: true
+  );
+
+  requestNumber @(
+    Common.ValueList: {
+      CollectionPath: 'SalesOrderRequests',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: requestNumber, ValueListProperty: 'requestNumber' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'fileName' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+
+  salesOrder @(
+    Common.ValueList: {
+      CollectionPath: 'SalesOrderRequests',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: salesOrder, ValueListProperty: 'salesOrder' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'requestNumber' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+
+  purchaseOrderByCustomer @(
+    Common.ValueList: {
+      CollectionPath: 'SalesOrderRequests',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: purchaseOrderByCustomer, ValueListProperty: 'purchaseOrderByCustomer' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'requestNumber' },
       ],
     },
     Common.ValueListWithFixedValues: false
@@ -319,3 +445,16 @@ annotate service.SalesOrderRequestItems with @(
         { $Type: 'UI.DataField', Label: 'Plant',             Value: plant },
     ],
 );
+
+annotate service.SalesOrderRequestItems with {
+  plant @(
+    Common.ValueList: {
+      CollectionPath: 'VH_Plant',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: plant, ValueListProperty: 'Plant' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'PlantName' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+};

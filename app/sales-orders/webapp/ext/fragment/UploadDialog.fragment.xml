@@ -1,0 +1,114 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:u="sap.ui.unified"
+  xmlns:l="sap.ui.layout">
+
+  <Dialog
+    id="uploadDialog"
+    title="Nouvelle demande de commande"
+    contentWidth="560px"
+    draggable="true">
+
+    <content>
+      <VBox class="sapUiSmallMargin">
+
+        <!-- File picker -->
+        <Label text="Fichiers (PDF, JPG, PNG, TIFF)" required="true" class="sapUiTinyMarginBottom"/>
+        <u:FileUploader
+          id="fileUploader"
+          multiple="true"
+          fileType="pdf,jpg,jpeg,png,tiff,tif"
+          mimeType="application/pdf,image/jpeg,image/png,image/tiff"
+          placeholder="Sélectionner un ou plusieurs fichiers…"
+          width="100%"
+          change=".onFileSelectionChange"
+          typeMismatch=".onFileTypeMismatch"/>
+
+        <MessageStrip
+          id="fileCountStrip"
+          text=""
+          type="Information"
+          showIcon="true"
+          visible="false"
+          class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+
+        <!-- Schema mode toggle -->
+        <HBox alignItems="Center" class="sapUiSmallMarginTop sapUiSmallMarginBottom"
+              visible="{= ${upload>/files}.length > 0 }">
+          <Label text="Schéma Document AI :" class="sapUiSmallMarginEnd"/>
+          <SegmentedButton
+            id="schemaModeBtn"
+            selectedKey="{upload>/schemaMode}"
+            selectionChange=".onSchemaModeChange">
+            <items>
+              <SegmentedButtonItem key="global" text="Identique pour tous"/>
+              <SegmentedButtonItem key="perFile" text="Par document"/>
+            </items>
+          </SegmentedButton>
+        </HBox>
+
+        <!-- Global schema select -->
+        <VBox visible="{= ${upload>/schemaMode} === 'global' &amp;&amp; ${upload>/files}.length > 0 }">
+          <Label text="Schéma pour tous les documents" class="sapUiTinyMarginBottom"/>
+          <Select
+            id="globalSchemaSelect"
+            width="100%"
+            selectedKey="{upload>/globalSchemaId}"
+            items="{upload>/schemas}">
+            <core:Item key="{upload>id}" text="{upload>name}"/>
+          </Select>
+        </VBox>
+
+        <!-- Per-file schema table -->
+        <VBox visible="{= ${upload>/schemaMode} === 'perFile' &amp;&amp; ${upload>/files}.length > 0 }">
+          <Label text="Schéma par document" class="sapUiTinyMarginBottom"/>
+          <Table
+            id="perFileTable"
+            items="{upload>/files}"
+            mode="None"
+            showSeparators="Inner">
+            <columns>
+              <Column width="55%"><Text text="Fichier"/></Column>
+              <Column><Text text="Schéma"/></Column>
+            </columns>
+            <items>
+              <ColumnListItem>
+                <cells>
+                  <Text text="{upload>name}" wrapping="false" maxLines="1"/>
+                  <Select
+                    width="100%"
+                    selectedKey="{upload>schemaId}"
+                    items="{path: 'upload>/schemas'}">
+                    <core:Item key="{upload>id}" text="{upload>name}"/>
+                  </Select>
+                </cells>
+              </ColumnListItem>
+            </items>
+          </Table>
+        </VBox>
+
+        <!-- Schema loading indicator -->
+        <HBox justifyContent="Center" visible="{upload>/schemasLoading}" class="sapUiSmallMarginTop">
+          <BusyIndicator size="Small"/>
+          <Text text="Chargement des schémas…" class="sapUiSmallMarginBegin"/>
+        </HBox>
+
+      </VBox>
+    </content>
+
+    <buttons>
+      <Button
+        id="submitUploadBtn"
+        text="Soumettre"
+        type="Emphasized"
+        enabled="{= ${upload>/files}.length > 0 &amp;&amp; !${upload>/submitting} }"
+        press=".onSubmitUpload"/>
+      <Button
+        text="Annuler"
+        press=".onCancelUpload"/>
+    </buttons>
+
+  </Dialog>
+
+</core:FragmentDefinition>

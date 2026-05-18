@@ -1,0 +1,80 @@
+{
+ "meta": {
+  "creator": "cds-dk 9.8.2"
+ },
+ "$version": "2.0",
+ "definitions": {
+  "API_DIVISION_SRV": {
+   "kind": "service",
+   "@cds.external": true,
+   "@m.IsDefaultEntityContainer": "true",
+   "@sap.message.scope.supported": "true",
+   "@sap.supported.formats": "atom json xlsx"
+  },
+  "API_DIVISION_SRV.A_Division": {
+   "kind": "entity",
+   "@cds.external": true,
+   "@cds.persistence.skip": true,
+   "@sap.creatable": "false",
+   "@sap.updatable": "false",
+   "@sap.deletable": "false",
+   "@sap.content.version": "1",
+   "@sap.label": "Division",
+   "elements": {
+    "Division": {
+     "key": true,
+     "type": "cds.String",
+     "length": 2,
+     "@sap.display.format": "UpperCase",
+     "@sap.label": "Division",
+     "notNull": true
+    },
+    "to_Text": {
+     "type": "cds.Association",
+     "target": "API_DIVISION_SRV.A_DivisionText",
+     "cardinality": {
+      "max": "*"
+     },
+     "keys": []
+    }
+   }
+  },
+  "API_DIVISION_SRV.A_DivisionText": {
+   "kind": "entity",
+   "@cds.external": true,
+   "@cds.persistence.skip": true,
+   "@sap.creatable": "false",
+   "@sap.updatable": "false",
+   "@sap.deletable": "false",
+   "@sap.content.version": "1",
+   "@sap.label": "Division Text",
+   "elements": {
+    "Division": {
+     "key": true,
+     "type": "cds.String",
+     "length": 2,
+     "@sap.display.format": "UpperCase",
+     "@sap.label": "Division",
+     "notNull": true
+    },
+    "Language": {
+     "key": true,
+     "type": "cds.String",
+     "length": 2,
+     "@sap.label": "Language Key",
+     "notNull": true
+    },
+    "DivisionName": {
+     "type": "cds.String",
+     "length": 20,
+     "@sap.label": "Division Description"
+    },
+    "to_Division": {
+     "type": "cds.Association",
+     "target": "API_DIVISION_SRV.A_Division",
+     "keys": []
+    }
+   }
+  }
+ }
+}

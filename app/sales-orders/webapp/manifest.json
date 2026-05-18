@@ -9,7 +9,7 @@
     "type": "application",
     "i18n": "i18n/i18n.properties",
     "applicationVersion": {
-      "version": "0.0.20"
+      "version": "0.0.26"
     },
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -133,6 +133,19 @@
               "variantManagement": "Page",
               "controllerExtensions": {
                 "sap.fe.templates.ListReport": "salesorders.ext.controller.ListReportExtension"
+              },
+              "content": {
+                "header": {
+                  "actions": {
+                    "newUpload": {
+                      "press": "salesorders.ext.controller.ListReportExtension.onOpenUploadDialog",
+                      "text": "Nouveau",
+                      "type": "Default",
+                      "enabled": true,
+                      "visible": true
+                    }
+                  }
+                }
               },
               "keyPerformanceIndicators": {
                 "kpiToProcess": {

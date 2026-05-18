@@ -1,0 +1,133 @@
+{
+ "meta": {
+  "creator": "cds-dk 9.8.2"
+ },
+ "$version": "2.0",
+ "definitions": {
+  "API_COUNTRY_SRV": {
+   "kind": "service",
+   "@cds.external": true,
+   "@m.IsDefaultEntityContainer": "true",
+   "@sap.message.scope.supported": "true",
+   "@sap.supported.formats": "atom json xlsx"
+  },
+  "API_COUNTRY_SRV.A_Country": {
+   "kind": "entity",
+   "@cds.external": true,
+   "@cds.persistence.skip": true,
+   "@sap.creatable": "false",
+   "@sap.updatable": "false",
+   "@sap.deletable": "false",
+   "@sap.content.version": "1",
+   "elements": {
+    "Country": {
+     "key": true,
+     "type": "cds.String",
+     "length": 3,
+     "@sap.display.format": "UpperCase",
+     "@sap.label": "Country/Region Key",
+     "notNull": true
+    },
+    "CountryCurrency": {
+     "type": "cds.String",
+     "length": 5,
+     "@sap.display.format": "UpperCase",
+     "@sap.label": "Reporting Currency",
+     "@sap.semantics": "currency-code"
+    },
+    "IndexBasedCurrency": {
+     "type": "cds.String",
+     "length": 5,
+     "@sap.display.format": "UpperCase",
+     "@sap.label": "Index-Based Currency",
+     "@sap.quickinfo": "Currency Key of the Index-Based Currency",
+     "@sap.semantics": "currency-code"
+    },
+    "HardCurrency": {
+     "type": "cds.String",
+     "length": 5,
+     "@sap.display.format": "UpperCase",
+     "@sap.label": "Hard Currency",
+     "@sap.quickinfo": "Currency Key of the Hard Currency",
+     "@sap.semantics": "currency-code"
+    },
+    "TaxCalculationProcedure": {
+     "type": "cds.String",
+     "length": 6,
+     "@sap.display.format": "UpperCase",
+     "@sap.label": "Procedure",
+     "@sap.quickinfo": "Procedure (Pricing, Output Control, Acct. Det., Costing,...)"
+    },
+    "CountryThreeLetterISOCode": {
+     "type": "cds.String",
+     "length": 3,
+     "@sap.display.format": "UpperCase",
+     "@sap.label": "ISO Code 3 Char",
+     "@sap.quickinfo": "ISO Country/Region Code 3 Characters"
+    },
+    "CountryThreeDigitISOCode": {
+     "type": "cds.String",
+     "length": 3,
+     "@sap.display.format": "NonNegative",
+     "@sap.label": "ISO Code Num. 3",
+     "@sap.quickinfo": "ISO Country/Region Code Numeric 3-Characters"
+    },
+    "to_Text": {
+     "type": "cds.Association",
+     "target": "API_COUNTRY_SRV.A_CountryText",
+     "cardinality": {
+      "max": "*"
+     },
+     "keys": []
+    }
+   }
+  },
+  "API_COUNTRY_SRV.A_CountryText": {
+   "kind": "entity",
+   "@cds.external": true,
+   "@cds.persistence.skip": true,
+   "@sap.creatable": "false",
+   "@sap.updatable": "false",
+   "@sap.deletable": "false",
+   "@sap.content.version": "1",
+   "elements": {
+    "Country": {
+     "key": true,
+     "type": "cds.String",
+     "length": 3,
+     "@sap.display.format": "UpperCase",
+     "@sap.label": "Country/Region Key",
+     "notNull": true
+    },
+    "Language": {
+     "key": true,
+     "type": "cds.String",
+     "length": 2,
+     "@sap.label": "Language Key",
+     "notNull": true
+    },
+    "CountryName": {
+     "type": "cds.String",
+     "length": 50,
+     "@sap.label": "Country/Region Name"
+    },
+    "NationalityName": {
+     "type": "cds.String",
+     "length": 15,
+     "@sap.label": "Nationality"
+    },
+    "NationalityLongName": {
+     "type": "cds.String",
+     "length": 50,
+     "@sap.label": "Nationality (Long)",
+     "@sap.quickinfo": "Nationality (Max. 50 Characters)"
+    },
+    "to_Country": {
+     "type": "cds.Association",
+     "target": "API_COUNTRY_SRV.A_Country",
+     "keys": []
+    }
+   }
+  }
+ }
+}
