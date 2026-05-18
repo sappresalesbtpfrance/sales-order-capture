@@ -2,14 +2,14 @@
   "_version": "1.73.1",
   "sap.cloud": {
     "public": true,
-    "service": "sales.order.capture"
+    "service": "salesordercapture"
   },
   "sap.app": {
     "id": "salesorders",
     "type": "application",
     "i18n": "i18n/i18n.properties",
     "applicationVersion": {
-      "version": "0.0.1"
+      "version": "0.0.9"
     },
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -21,7 +21,7 @@
     },
     "dataSources": {
       "mainService": {
-        "uri": "/odata/v4/sales-order-capture/",
+        "uri": "odata/v4/sales-order-capture/",
         "type": "OData",
         "settings": {
           "annotations": [],

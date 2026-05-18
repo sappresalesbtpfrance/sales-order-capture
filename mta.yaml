@@ -1,6 +1,6 @@
 _schema-version: "3.1"
 ID: sales-order-capture
-version: 1.0.0
+version: 1.0.10
 description: Automatic extraction of Sales Orders from documents via SAP Document AI
 
 build-parameters:
@@ -19,6 +19,9 @@ modules:
     parameters:
       memory: 512M
       disk-quota: 1024M
+      routes:
+        - route: "${default-url}"
+        - route: "${default-host}.cert.${default-domain}"
     properties:
       CDS_ENV: production
       NODE_ENV: production
@@ -32,6 +35,7 @@ modules:
       - name: sales-order-capture-destination
       - name: sales-order-capture-connectivity
       - name: sales-order-capture-docai
+      - name: sales-order-capture-ias
     provides:
       - name: srv-api
         properties:
@@ -78,34 +82,40 @@ modules:
             - salesorders.zip
           target-path: resources/
 
-  # ── Destination Content (registers srv-api in managed approuter) ──────────────
+  # ── Destination Content (registers xsuaa for managed approuter) ─────────────
   - name: sales-order-capture-destination-content
     type: com.sap.application.content
     requires:
       - name: sales-order-capture-destination
         parameters:
           content-target: true
-      - name: sales-order-capture-html5-host
-        parameters:
-          service-key:
-            name: sales-order-capture-html5-host-key
       - name: sales-order-capture-xsuaa
         parameters:
           service-key:
             name: sales-order-capture-xsuaa-key
+      - name: sales-order-capture-html5-host
+        parameters:
+          service-key:
+            name: sales-order-capture-html5-host-key
+      - name: srv-api
     parameters:
       content:
         instance:
           destinations:
-            - Name: sales-order-capture-html5-host
-              ServiceInstanceName: sales-order-capture-html5-host
-              ServiceKeyName: sales-order-capture-html5-host-key
-              sap.cloud.service: sales.order.capture
             - Authentication: OAuth2UserTokenExchange
               Name: sales-order-capture-xsuaa
               ServiceInstanceName: sales-order-capture-xsuaa
               ServiceKeyName: sales-order-capture-xsuaa-key
-              sap.cloud.service: sales.order.capture
+            - Name: sales-order-capture-html5-host
+              ServiceInstanceName: sales-order-capture-html5-host
+              ServiceKeyName: sales-order-capture-html5-host-key
+              sap.cloud.service: salesordercapture
+            - Name: srv-api
+              Authentication: OAuth2UserTokenExchange
+              URL: ~{srv-api/srv-url}
+              TokenServiceInstanceName: sales-order-capture-xsuaa
+              TokenServiceKeyName: sales-order-capture-xsuaa-key
+              HTML5.DynamicDestination: true
           existing_destinations_policy: update
     build-parameters:
       no-source: true
@@ -144,19 +154,6 @@ resources:
       service-name: sales-order-capture-destination
       config:
         HTML5Runtime_enabled: true
-        init_data:
-          instance:
-            existing_destinations_policy: update
-            destinations:
-              - Name: srv-api
-                URL: ~{srv-api/srv-url}
-                Authentication: NoAuthentication
-                Type: HTTP
-                ProxyType: Internet
-                HTML5.ForwardAuthToken: true
-                HTML5.DynamicDestination: true
-    requires:
-      - name: srv-api
 
   # ── Connectivity ──────────────────────────────────────────────────────────────
   - name: sales-order-capture-connectivity
@@ -187,6 +184,16 @@ resources:
     type: org.cloudfoundry.existing-service
     parameters:
       service-name: cf-documentai
+
+  # ── IAS ───────────────────────────────────────────────────────────────────────
+  - name: sales-order-capture-ias
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: identity
+      service-plan: application
+      service-name: sales-order-capture-ias
+      config:
+        display-name: Sales Order Capture
 
 parameters:
   enable-parallel-deployments: true

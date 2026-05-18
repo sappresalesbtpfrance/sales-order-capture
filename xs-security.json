@@ -6,6 +6,10 @@
     {
       "name": "$XSAPPNAME.User",
       "description": "Use the application"
+    },
+    {
+      "name": "uaa.user",
+      "description": "UAA Token Exchange"
     }
   ],
   "role-templates": [
@@ -15,6 +19,13 @@
       "scope-references": [
         "$XSAPPNAME.User"
       ]
+    },
+    {
+      "name": "Token_Exchange",
+      "description": "UAA Token Exchange",
+      "scope-references": [
+        "uaa.user"
+      ]
     }
   ],
   "role-collections": [
@@ -22,7 +33,8 @@
       "name": "SalesOrderCapture_User",
       "description": "Sales Order Capture User",
       "role-template-references": [
-        "$XSAPPNAME.User"
+        "$XSAPPNAME.User",
+        "$XSAPPNAME.Token_Exchange"
       ]
     }
   ],
