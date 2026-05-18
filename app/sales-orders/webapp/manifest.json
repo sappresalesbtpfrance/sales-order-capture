@@ -9,7 +9,7 @@
     "type": "application",
     "i18n": "i18n/i18n.properties",
     "applicationVersion": {
-      "version": "0.0.27"
+      "version": "0.0.28"
     },
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -134,19 +134,6 @@
               "controllerExtensions": {
                 "sap.fe.templates.ListReport": "salesorders.ext.controller.ListReportExtension"
               },
-              "content": {
-                "body": {
-                  "actions": {
-                    "newUpload": {
-                      "press": "salesorders.ext.controller.ListReportExtension.onOpenUploadDialog",
-                      "text": "Créer",
-                      "type": "Emphasized",
-                      "enabled": true,
-                      "visible": true
-                    }
-                  }
-                }
-              },
               "keyPerformanceIndicators": {
                 "kpiToProcess": {
                   "template": "salesorders.ext.fragment.SalesOrderKPI"
@@ -163,6 +150,15 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable"
+                  },
+                  "actions": {
+                    "newUpload": {
+                      "press": "salesorders.ext.controller.ListReportExtension.onOpenUploadDialog",
+                      "text": "Créer",
+                      "type": "Emphasized",
+                      "enabled": true,
+                      "visible": true
+                    }
                   },
                   "columns": {
                     "ProcessingFlow": {
