@@ -7,6 +7,11 @@ using from '../../srv/external/API_COMPANYCODE_SRV';
 using from '../../srv/external/API_PLANT_SRV';
 using from '../../srv/external/API_COUNTRY_SRV';
 
+// Hide native Create button — upload dialog replaces it
+annotate service.SalesOrderRequests with @(
+  Capabilities.InsertRestrictions: { Insertable: false }
+);
+
 // ── Value Help annotations ────────────────────────────────────────────────────
 annotate service.SalesOrderRequests with {
   salesOrganization @(

@@ -1,6 +1,6 @@
 _schema-version: "3.1"
 ID: sales-order-capture
-version: 1.0.30
+version: 1.0.31
 description: Automatic extraction of Sales Orders from documents via SAP Document AI
 
 build-parameters:
