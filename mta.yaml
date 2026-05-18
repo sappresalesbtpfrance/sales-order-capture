@@ -1,6 +1,6 @@
 _schema-version: "3.1"
 ID: sales-order-capture
-version: 1.0.10
+version: 1.0.24
 description: Automatic extraction of Sales Orders from documents via SAP Document AI
 
 build-parameters:
@@ -116,6 +116,7 @@ modules:
               TokenServiceInstanceName: sales-order-capture-xsuaa
               TokenServiceKeyName: sales-order-capture-xsuaa-key
               HTML5.DynamicDestination: true
+              sap.cloud.service: salesordercapture
           existing_destinations_policy: update
     build-parameters:
       no-source: true

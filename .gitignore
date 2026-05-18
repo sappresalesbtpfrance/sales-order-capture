@@ -9,6 +9,12 @@ dist/
 # MTA build output
 mta_archives/
 .mta_build_tmp/
+.sales-order-capture_mta_build_tmp/
+Makefile_*.mta
+*.mtar
+
+# App build resources
+app/resources/
 
 # SQLite local DB
 *.db

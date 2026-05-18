@@ -1,4 +1,32 @@
 using SalesOrderCaptureService as service from '../../srv/service';
+using from '../../srv/external/API_SALESORGANIZATION_SRV';
+using from '../../srv/external/API_DISTRIBUTIONCHANNEL_SRV';
+
+// ── Value Help annotations ────────────────────────────────────────────────────
+annotate service.SalesOrderRequests with {
+  salesOrganization @(
+    Common.ValueList: {
+      CollectionPath: 'VH_SalesOrganization',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: salesOrganization, ValueListProperty: 'SalesOrganization' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'SalesOrganizationName' },
+      ],
+      PresentationVariantQualifier: '',
+    },
+    Common.ValueListWithFixedValues: false
+  );
+
+  distributionChannel @(
+    Common.ValueList: {
+      CollectionPath: 'VH_DistributionChannel',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: distributionChannel, ValueListProperty: 'DistributionChannel' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'DistributionChannelName' },
+      ],
+    },
+    Common.ValueListWithFixedValues: false
+  );
+};
 
 // ── List Report ───────────────────────────────────────────────────────────────
 annotate service.SalesOrderRequests with @(
@@ -41,10 +69,11 @@ annotate service.SalesOrderRequests with @(
             Criticality: (simulationStatus = 'SUCCESSFUL' ? 3 : simulationStatus = 'FAILED' ? 1 : 0),
         },
         {
-            $Type:  'UI.DataFieldWithUrl',
-            Label:  'Sales Order',
-            Value:  salesOrder,
-            Url:    salesOrderUrl,
+            $Type:               'UI.DataFieldWithUrl',
+            Label:               'Sales Order',
+            Value:               salesOrder,
+            Url:                 salesOrderUrl,
+            ![@HTML5.LinkTarget]: '_blank',
         },
     ],
 
@@ -103,10 +132,11 @@ annotate service.SalesOrderRequests with @(
                 Value: companyCode,
             },
             {
-                $Type:  'UI.DataFieldWithUrl',
-                Label:  'Sales Order',
-                Value:  salesOrder,
-                Url:    salesOrderUrl,
+                $Type:               'UI.DataFieldWithUrl',
+                Label:               'Sales Order',
+                Value:               salesOrder,
+                Url:                 salesOrderUrl,
+                ![@HTML5.LinkTarget]: '_blank',
             },
             {
                 $Type: 'UI.DataField',

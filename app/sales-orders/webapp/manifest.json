@@ -9,7 +9,7 @@
     "type": "application",
     "i18n": "i18n/i18n.properties",
     "applicationVersion": {
-      "version": "0.0.9"
+      "version": "0.0.20"
     },
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -21,7 +21,7 @@
     },
     "dataSources": {
       "mainService": {
-        "uri": "/odata/v4/sales-order-capture/",
+        "uri": "odata/v4/sales-order-capture/",
         "type": "OData",
         "settings": {
           "annotations": [],
@@ -43,6 +43,11 @@
             "applicationType": "SAPUI5",
             "additionalInformation": "SAPUI5.Component=salesorders",
             "url": "."
+          },
+          "indicatorDataSource": {
+            "dataSource": "mainService",
+            "path": "getSalesOrderKPIs()",
+            "refresh": 300
           }
         }
       }
@@ -124,7 +129,16 @@
           "options": {
             "settings": {
               "contextPath": "/SalesOrderRequests",
+              "initialLoad": "Enabled",
               "variantManagement": "Page",
+              "controllerExtensions": {
+                "sap.fe.templates.ListReport": "salesorders.ext.controller.ListReportExtension"
+              },
+              "keyPerformanceIndicators": {
+                "kpiToProcess": {
+                  "template": "salesorders.ext.fragment.SalesOrderKPI"
+                }
+              },
               "navigation": {
                 "SalesOrderRequests": {
                   "detail": {

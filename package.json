@@ -6,13 +6,13 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "@cap-js/attachments": "^1",
+    "@cap-js/attachments": "^1.2.1",
     "@cap-js/hana": "^1",
-    "@sap/cds": "^9",
-    "@sap/hana-client": "^2",
     "@sap-cloud-sdk/connectivity": "^3",
     "@sap-cloud-sdk/http-client": "^3",
     "@sap-cloud-sdk/resilience": "^3",
+    "@sap/cds": "^9",
+    "@sap/hana-client": "^2",
     "express": "^4"
   },
   "devDependencies": {
@@ -71,6 +71,42 @@
       },
       "attachments": {
         "kind": "db"
+      },
+      "API_SALESORGANIZATION_SRV": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_SALESORGANIZATION_SRV",
+        "credentials": {
+          "url": "http://vhcals4hci.dummy.nodomain:50000/sap/opu/odata/sap/API_SALESORGANIZATION_SRV",
+          "authentication": "BasicAuthentication",
+          "username": "BPINST",
+          "password": "Welcome1"
+        },
+        "[production]": {
+          "kind": "odata-v2",
+          "model": "srv/external/API_SALESORGANIZATION_SRV",
+          "credentials": {
+            "destination": "APIS4",
+            "path": "/sap/opu/odata/sap/API_SALESORGANIZATION_SRV"
+          }
+        }
+      },
+      "API_DISTRIBUTIONCHANNEL_SRV": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_DISTRIBUTIONCHANNEL_SRV",
+        "credentials": {
+          "url": "http://vhcals4hci.dummy.nodomain:50000/sap/opu/odata/sap/API_DISTRIBUTIONCHANNEL_SRV",
+          "authentication": "BasicAuthentication",
+          "username": "BPINST",
+          "password": "Welcome1"
+        },
+        "[production]": {
+          "kind": "odata-v2",
+          "model": "srv/external/API_DISTRIBUTIONCHANNEL_SRV",
+          "credentials": {
+            "destination": "APIS4",
+            "path": "/sap/opu/odata/sap/API_DISTRIBUTIONCHANNEL_SRV"
+          }
+        }
       }
     },
     "fiori": {

@@ -1,0 +1,80 @@
+{
+ "meta": {
+  "creator": "cds-dk 9.8.2"
+ },
+ "$version": "2.0",
+ "definitions": {
+  "API_DISTRIBUTIONCHANNEL_SRV": {
+   "kind": "service",
+   "@cds.external": true,
+   "@m.IsDefaultEntityContainer": "true",
+   "@sap.message.scope.supported": "true",
+   "@sap.supported.formats": "atom json xlsx"
+  },
+  "API_DISTRIBUTIONCHANNEL_SRV.A_DistributionChannel": {
+   "kind": "entity",
+   "@cds.external": true,
+   "@cds.persistence.skip": true,
+   "@sap.creatable": "false",
+   "@sap.updatable": "false",
+   "@sap.deletable": "false",
+   "@sap.content.version": "1",
+   "@sap.label": "Distribution Channel",
+   "elements": {
+    "DistributionChannel": {
+     "key": true,
+     "type": "cds.String",
+     "length": 2,
+     "@sap.display.format": "UpperCase",
+     "@sap.label": "Distribution Channel",
+     "notNull": true
+    },
+    "to_Text": {
+     "type": "cds.Association",
+     "target": "API_DISTRIBUTIONCHANNEL_SRV.A_DistributionChannelText",
+     "cardinality": {
+      "max": "*"
+     },
+     "keys": []
+    }
+   }
+  },
+  "API_DISTRIBUTIONCHANNEL_SRV.A_DistributionChannelText": {
+   "kind": "entity",
+   "@cds.external": true,
+   "@cds.persistence.skip": true,
+   "@sap.creatable": "false",
+   "@sap.updatable": "false",
+   "@sap.deletable": "false",
+   "@sap.content.version": "1",
+   "@sap.label": "Distribution Channel Text",
+   "elements": {
+    "DistributionChannel": {
+     "key": true,
+     "type": "cds.String",
+     "length": 2,
+     "@sap.display.format": "UpperCase",
+     "@sap.label": "Distribution Channel",
+     "notNull": true
+    },
+    "Language": {
+     "key": true,
+     "type": "cds.String",
+     "length": 2,
+     "@sap.label": "Language Key",
+     "notNull": true
+    },
+    "DistributionChannelName": {
+     "type": "cds.String",
+     "length": 20,
+     "@sap.label": "Distribution Channel Description"
+    },
+    "to_DistributionChannel": {
+     "type": "cds.Association",
+     "target": "API_DISTRIBUTIONCHANNEL_SRV.A_DistributionChannel",
+     "keys": []
+    }
+   }
+  }
+ }
+}

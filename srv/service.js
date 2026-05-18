@@ -25,7 +25,20 @@ const STATUS_CRITICALITY = {
 };
 
 module.exports = cds.service.impl(async function () {
-  const { SalesOrderRequests, SalesOrderRequestItems } = this.entities;
+  const { SalesOrderRequests, SalesOrderRequestItems, VH_SalesOrganization, VH_DistributionChannel } = this.entities;
+
+  // ── Value Help handlers (delegated to S/4, language-aware) ────────────────
+  const _readVH = async (entityName, keyField, nameField, req) => {
+    const lang = (req.locale || 'en').toUpperCase();
+    const s4   = await cds.connect.to(entityName.startsWith('VH_SalesOrg') ? 'API_SALESORGANIZATION_SRV' : 'API_DISTRIBUTIONCHANNEL_SRV');
+    const table = entityName.startsWith('VH_SalesOrg') ? 'A_SalesOrganizationText' : 'A_DistributionChannelText';
+    let rows = await s4.run(SELECT.from(table).where({ Language: lang }));
+    if (!rows.length) rows = await s4.run(SELECT.from(table).where({ Language: 'EN' }));
+    return rows.map(r => ({ [keyField]: r[keyField], [nameField]: r[nameField], Language: r.Language }));
+  };
+
+  this.on('READ', VH_SalesOrganization,  (req) => _readVH('VH_SalesOrganization',  'SalesOrganization',  'SalesOrganizationName',  req));
+  this.on('READ', VH_DistributionChannel, (req) => _readVH('VH_DistributionChannel', 'DistributionChannel', 'DistributionChannelName', req));
 
   // ── Compute virtual fields ─────────────────────────────────────────────────
   const S4_FLP_BASE = 'https://vhcals4hci.dummy.nodomain:44301/sap/bc/ui5_ui5/ui2/ushell/shells/abap/FioriLaunchpad.html';
@@ -53,7 +66,38 @@ module.exports = cds.service.impl(async function () {
   this.after('READ', SalesOrderRequests, computeVirtualFields);
   this.after('READ', SalesOrderRequests.drafts, computeVirtualFields);
 
-  // ── Upload multiple files ───────────────────────────────────────────────────
+  // ── KPI function ───────────────────────────────────────────────────────────
+  const KPI_LABELS = {
+    fr: { unit: 'à traiter',     info: total => `${total} au total` },
+    de: { unit: 'zu bearbeiten', info: total => `${total} insgesamt` },
+    en: { unit: 'to process',    info: total => `${total} total` },
+  };
+
+  this.on('getSalesOrderKPIs', async (req) => {
+    const TO_PROCESS_STATUSES = [
+      PROCESSING_STATUS.DATA_COMPLETE,
+      PROCESSING_STATUS.DATA_INCOMPLETE,
+      PROCESSING_STATUS.IN_PROCESS,
+    ];
+    const [{ total }]     = await SELECT`count(*) as total`.from(SalesOrderRequests);
+    const [{ toProcess }] = await SELECT`count(*) as toProcess`.from(SalesOrderRequests)
+      .where({ processingStatus: { in: TO_PROCESS_STATUSES } });
+
+    const n = Number(toProcess);
+    const t = KPI_LABELS[req.locale] ?? KPI_LABELS['en'];
+    return {
+      number:      n,
+      numberUnit:  t.unit,
+      numberState: n > 0 ? 'Critical' : 'Positive',
+      infoState:   n > 0 ? 'Critical' : 'Positive',
+      info:        t.info(Number(total)),
+      icon:        'sap-icon://sales-order',
+      toProcess:   n,
+      total:       Number(total),
+    };
+  });
+
+
   this.on('uploadFiles', async (req) => {
     const { files } = req.data;
     if (!files?.length) return req.error(400, 'No files provided');
