@@ -75,6 +75,10 @@ annotate service.SalesOrderRequests with @(
             $Type:  'UI.ReferenceFacet',
             Target: '@UI.FieldGroup#NetValues',
         },
+        {
+            $Type:  'UI.ReferenceFacet',
+            Target: '@UI.FieldGroup#DocumentAI',
+        },
     ],
 
     UI.FieldGroup#ProcessingInfo: {
@@ -139,6 +143,23 @@ annotate service.SalesOrderRequests with @(
                 $Type: 'UI.DataField',
                 Label: 'Simulated Net Value',
                 Value: simulatedNetAmount,
+            },
+        ],
+    },
+
+    UI.FieldGroup#DocumentAI: {
+        Label: 'Document AI',
+        Data: [
+            {
+                $Type: 'UI.DataField',
+                Label: 'Extraction Status',
+                Value: processingStatus,
+                Criticality: processingStatusCriticality,
+            },
+            {
+                $Type: 'UI.DataField',
+                Label: 'Extraction Log',
+                Value: extractionLog,
             },
         ],
     },

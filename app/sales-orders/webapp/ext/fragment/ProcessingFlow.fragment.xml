@@ -1,0 +1,38 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+    <HBox alignItems="Center" renderType="Bare" class="sapUiTinyMarginTopBottom">
+        <!-- Upload -->
+        <Avatar
+            src="sap-icon://upload-to-cloud"
+            displayShape="Circle"
+            displaySize="Custom"
+            customDisplaySize="2rem"
+            customFontSize="0.875rem"
+            backgroundColor="{= ${workflowStep} >= 1 ? 'Accent6' : 'TileIcon'}"
+            tooltip="Upload"
+            decorative="false"/>
+        <Text text="—" class="sapUiTinyMarginBeginEnd" style="color:#8c8c8c"/>
+        <!-- Extraction -->
+        <Avatar
+            src="sap-icon://document-text"
+            displayShape="Circle"
+            displaySize="Custom"
+            customDisplaySize="2rem"
+            customFontSize="0.875rem"
+            backgroundColor="{= ${workflowStep} >= 2 ? 'Accent6' : 'TileIcon'}"
+            tooltip="Extraction"
+            decorative="false"/>
+        <Text text="—" class="sapUiTinyMarginBeginEnd" style="color:#8c8c8c"/>
+        <!-- Sales Order Created -->
+        <Avatar
+            src="sap-icon://sales-order"
+            displayShape="Circle"
+            displaySize="Custom"
+            customDisplaySize="2rem"
+            customFontSize="0.875rem"
+            backgroundColor="{= ${workflowStep} >= 4 ? 'Accent6' : 'TileIcon'}"
+            tooltip="Sales Order Created"
+            decorative="false"/>
+    </HBox>
+</core:FragmentDefinition>

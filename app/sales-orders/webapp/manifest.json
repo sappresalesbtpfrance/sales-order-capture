@@ -21,7 +21,7 @@
     },
     "dataSources": {
       "mainService": {
-        "uri": "odata/v4/sales-order-capture/",
+        "uri": "/odata/v4/sales-order-capture/",
         "type": "OData",
         "settings": {
           "annotations": [],
@@ -136,6 +136,19 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable"
+                  },
+                  "columns": {
+                    "ProcessingFlow": {
+                      "header": "Processing Flow",
+                      "width": "10rem",
+                      "horizontalAlign": "Center",
+                      "availability": "Default",
+                      "position": {
+                        "anchor": "DataField::fileName",
+                        "placement": "After"
+                      },
+                      "template": "salesorders.ext.fragment.ProcessingFlow"
+                    }
                   }
                 }
               }

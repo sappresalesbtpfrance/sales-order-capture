@@ -27,12 +27,29 @@ const STATUS_CRITICALITY = {
 module.exports = cds.service.impl(async function () {
   const { SalesOrderRequests, SalesOrderRequestItems } = this.entities;
 
-  // ── Compute virtual criticality ─────────────────────────────────────────────
-  this.after('READ', SalesOrderRequests, (results) => {
+  // ── Compute virtual fields ─────────────────────────────────────────────────
+  const computeVirtualFields = (results) => {
     for (const req of [results].flat()) {
       req.processingStatusCriticality = STATUS_CRITICALITY[req.processingStatus] ?? 0;
+
+      // workflowStep: 1=uploaded, 2=extracted, 3=simulated, 4=completed
+      if (req.salesOrder) {
+        req.workflowStep = 4;
+      } else if (req.simulationStatus === SIMULATION_STATUS.SUCCESSFUL) {
+        req.workflowStep = 3;
+      } else if ([
+        PROCESSING_STATUS.DATA_COMPLETE,
+        PROCESSING_STATUS.DATA_INCOMPLETE,
+      ].includes(req.processingStatus)) {
+        req.workflowStep = 2;
+      } else {
+        req.workflowStep = 1;
+      }
     }
-  });
+  };
+
+  this.after('READ', SalesOrderRequests, computeVirtualFields);
+  this.after('READ', SalesOrderRequests.drafts, computeVirtualFields);
 
   // ── Upload multiple files ───────────────────────────────────────────────────
   this.on('uploadFiles', async (req) => {
