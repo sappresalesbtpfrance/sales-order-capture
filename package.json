@@ -107,6 +107,96 @@
             "path": "/sap/opu/odata/sap/API_DISTRIBUTIONCHANNEL_SRV"
           }
         }
+      },
+      "API_BUSINESS_PARTNER": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_BUSINESS_PARTNER",
+        "credentials": {
+          "url": "http://vhcals4hci.dummy.nodomain:50000/sap/opu/odata/sap/API_BUSINESS_PARTNER",
+          "authentication": "BasicAuthentication",
+          "username": "BPINST",
+          "password": "Welcome1"
+        },
+        "[production]": {
+          "kind": "odata-v2",
+          "model": "srv/external/API_BUSINESS_PARTNER",
+          "credentials": {
+            "destination": "APIS4",
+            "path": "/sap/opu/odata/sap/API_BUSINESS_PARTNER"
+          }
+        }
+      },
+      "API_DIVISION_SRV": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_DIVISION_SRV",
+        "credentials": {
+          "url": "http://vhcals4hci.dummy.nodomain:50000/sap/opu/odata/sap/API_DIVISION_SRV",
+          "authentication": "BasicAuthentication",
+          "username": "BPINST",
+          "password": "Welcome1"
+        },
+        "[production]": {
+          "kind": "odata-v2",
+          "model": "srv/external/API_DIVISION_SRV",
+          "credentials": {
+            "destination": "APIS4",
+            "path": "/sap/opu/odata/sap/API_DIVISION_SRV"
+          }
+        }
+      },
+      "API_COMPANYCODE_SRV": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_COMPANYCODE_SRV",
+        "credentials": {
+          "url": "http://vhcals4hci.dummy.nodomain:50000/sap/opu/odata/sap/API_COMPANYCODE_SRV",
+          "authentication": "BasicAuthentication",
+          "username": "BPINST",
+          "password": "Welcome1"
+        },
+        "[production]": {
+          "kind": "odata-v2",
+          "model": "srv/external/API_COMPANYCODE_SRV",
+          "credentials": {
+            "destination": "APIS4",
+            "path": "/sap/opu/odata/sap/API_COMPANYCODE_SRV"
+          }
+        }
+      },
+      "API_PLANT_SRV": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_PLANT_SRV",
+        "credentials": {
+          "url": "http://vhcals4hci.dummy.nodomain:50000/sap/opu/odata/sap/API_PLANT_SRV",
+          "authentication": "BasicAuthentication",
+          "username": "BPINST",
+          "password": "Welcome1"
+        },
+        "[production]": {
+          "kind": "odata-v2",
+          "model": "srv/external/API_PLANT_SRV",
+          "credentials": {
+            "destination": "APIS4",
+            "path": "/sap/opu/odata/sap/API_PLANT_SRV"
+          }
+        }
+      },
+      "API_COUNTRY_SRV": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_COUNTRY_SRV",
+        "credentials": {
+          "url": "http://vhcals4hci.dummy.nodomain:50000/sap/opu/odata/sap/API_COUNTRY_SRV",
+          "authentication": "BasicAuthentication",
+          "username": "S4H_SD_DEM",
+          "password": "Welcome1"
+        },
+        "[production]": {
+          "kind": "odata-v2",
+          "model": "srv/external/API_COUNTRY_SRV",
+          "credentials": {
+            "destination": "APIS4",
+            "path": "/sap/opu/odata/sap/API_COUNTRY_SRV"
+          }
+        }
       }
     },
     "fiori": {

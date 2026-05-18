@@ -2,7 +2,9 @@
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
   xmlns:u="sap.ui.unified"
-  xmlns:l="sap.ui.layout">
+  core:require="{
+    handler: 'salesorders/ext/controller/UploadHandler'
+  }">
 
   <Dialog
     id="uploadDialog"
@@ -13,7 +15,6 @@
     <content>
       <VBox class="sapUiSmallMargin">
 
-        <!-- File picker -->
         <Label text="Fichiers (PDF, JPG, PNG, TIFF)" required="true" class="sapUiTinyMarginBottom"/>
         <u:FileUploader
           id="fileUploader"
@@ -22,8 +23,8 @@
           mimeType="application/pdf,image/jpeg,image/png,image/tiff"
           placeholder="Sélectionner un ou plusieurs fichiers…"
           width="100%"
-          change=".onFileSelectionChange"
-          typeMismatch=".onFileTypeMismatch"/>
+          change="handler.onFileSelectionChange"
+          typeMismatch="handler.onFileTypeMismatch"/>
 
         <MessageStrip
           id="fileCountStrip"
@@ -33,14 +34,13 @@
           visible="false"
           class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
 
-        <!-- Schema mode toggle -->
         <HBox alignItems="Center" class="sapUiSmallMarginTop sapUiSmallMarginBottom"
               visible="{= ${upload>/files}.length > 0 }">
           <Label text="Schéma Document AI :" class="sapUiSmallMarginEnd"/>
           <SegmentedButton
             id="schemaModeBtn"
             selectedKey="{upload>/schemaMode}"
-            selectionChange=".onSchemaModeChange">
+            selectionChange="handler.onSchemaModeChange">
             <items>
               <SegmentedButtonItem key="global" text="Identique pour tous"/>
               <SegmentedButtonItem key="perFile" text="Par document"/>
@@ -48,7 +48,6 @@
           </SegmentedButton>
         </HBox>
 
-        <!-- Global schema select -->
         <VBox visible="{= ${upload>/schemaMode} === 'global' &amp;&amp; ${upload>/files}.length > 0 }">
           <Label text="Schéma pour tous les documents" class="sapUiTinyMarginBottom"/>
           <Select
@@ -60,7 +59,6 @@
           </Select>
         </VBox>
 
-        <!-- Per-file schema table -->
         <VBox visible="{= ${upload>/schemaMode} === 'perFile' &amp;&amp; ${upload>/files}.length > 0 }">
           <Label text="Schéma par document" class="sapUiTinyMarginBottom"/>
           <Table
@@ -88,7 +86,6 @@
           </Table>
         </VBox>
 
-        <!-- Schema loading indicator -->
         <HBox justifyContent="Center" visible="{upload>/schemasLoading}" class="sapUiSmallMarginTop">
           <BusyIndicator size="Small"/>
           <Text text="Chargement des schémas…" class="sapUiSmallMarginBegin"/>
@@ -103,10 +100,10 @@
         text="Soumettre"
         type="Emphasized"
         enabled="{= ${upload>/files}.length > 0 &amp;&amp; !${upload>/submitting} }"
-        press=".onSubmitUpload"/>
+        press="handler.onSubmitUpload"/>
       <Button
         text="Annuler"
-        press=".onCancelUpload"/>
+        press="handler.onCancelUpload"/>
     </buttons>
 
   </Dialog>
