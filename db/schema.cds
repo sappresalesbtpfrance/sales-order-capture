@@ -78,7 +78,7 @@ entity SalesOrderRequestItems : cuid {
   request               : Association to SalesOrderRequests;
   itemNumber            : String(6)     @title: 'Item';
   material              : String(40)    @title: 'Material';
-  materialDescription   : String(40)    @title: 'Description';
+  materialDescription   : String(255)   @title: 'Description';
   requestedQuantity     : Decimal(13,3) @title: 'Quantity';
   requestedQuantityUnit : String(3)     @title: 'Unit';
   netAmount             : Decimal(15,2) @title: 'Net Amount';

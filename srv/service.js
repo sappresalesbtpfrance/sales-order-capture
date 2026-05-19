@@ -26,7 +26,7 @@ const STATUS_CRITICALITY = {
 };
 
 module.exports = cds.service.impl(async function () {
-  const { SalesOrderRequests, SalesOrderRequestItems, VH_SalesOrganization, VH_DistributionChannel, VH_Customer, VH_Division, VH_CompanyCode, VH_Plant, VH_Country, VH_ProcessingStatus, Currencies } = this.entities;
+  const { SalesOrderRequests, SalesOrderRequestItems, VH_SalesOrganization, VH_DistributionChannel, VH_Customer, VH_Division, VH_CompanyCode, VH_Plant, VH_Country, VH_ProcessingStatus, VH_SalesOrderType, Currencies } = this.entities;
 
   // ── Value Help handlers (delegated to S/4, language-aware) ────────────────
   const _readVH = async (entityName, keyField, nameField, req) => {
@@ -70,9 +70,55 @@ module.exports = cds.service.impl(async function () {
   this.on('READ', VH_Country, async (req) => {
     const lang = (req.locale || 'en').toUpperCase();
     const s4 = await cds.connect.to('API_COUNTRY_SRV');
-    let rows = await s4.run(SELECT.from('API_COUNTRY_SRV.A_CountryText').where({ Language: lang }));
-    if (!rows.length) rows = await s4.run(SELECT.from('API_COUNTRY_SRV.A_CountryText').where({ Language: 'EN' }));
-    return rows.map(r => ({ Country: r.Country, CountryName: r.CountryName, Language: r.Language }));
+
+    // Extract search value from where clause (Fiori VH sends filter on CountryName or Country)
+    const getSearchVal = (where) => {
+      if (!where) return null;
+      const str = JSON.stringify(where);
+      const m = str.match(/"val"\s*:\s*"([^"]+)"/);
+      return m ? m[1] : null;
+    };
+    const searchVal = getSearchVal(req.query?.SELECT?.where);
+
+    let rows = await s4.run(SELECT.from('API_COUNTRY_SRV.A_CountryText').where({ Language: lang }).limit(300));
+    if (!rows.length) rows = await s4.run(SELECT.from('API_COUNTRY_SRV.A_CountryText').where({ Language: 'EN' }).limit(300));
+
+    if (searchVal) {
+      const sv = searchVal.toLowerCase();
+      rows = rows.filter(r =>
+        r.Country?.toLowerCase().includes(sv) ||
+        r.CountryName?.toLowerCase().includes(sv)
+      );
+    }
+
+    return rows.map(r => ({ Country: r.Country, CountryName: r.CountryName }));
+  });
+
+  const SALES_ORDER_TYPES = [
+    { code: 'OR',  description: 'Standard Order' },
+    { code: 'TA',  description: 'Standard Order (DE)' },
+    { code: 'RO',  description: 'Rush Order' },
+    { code: 'SO',  description: 'Service Order' },
+    { code: 'CR',  description: 'Credit Memo Request' },
+    { code: 'DR',  description: 'Debit Memo Request' },
+    { code: 'RE',  description: 'Returns' },
+    { code: 'QT',  description: 'Quotation' },
+    { code: 'IN',  description: 'Inquiry' },
+    { code: 'BV',  description: 'Cash Sales' },
+    { code: 'KE',  description: 'Consignment Issue' },
+    { code: 'KA',  description: 'Consignment Pick-up' },
+  ];
+
+  this.on('READ', VH_SalesOrderType, (req) => {
+    const searchVal = (() => {
+      const str = JSON.stringify(req.query?.SELECT?.where || '');
+      const m = str.match(/"val"\s*:\s*"([^"]+)"/);
+      return m ? m[1].toLowerCase() : null;
+    })();
+    const rows = searchVal
+      ? SALES_ORDER_TYPES.filter(r => r.code.toLowerCase().includes(searchVal) || r.description.toLowerCase().includes(searchVal))
+      : SALES_ORDER_TYPES;
+    return rows;
   });
 
   const PROCESSING_STATUS_LABELS = {

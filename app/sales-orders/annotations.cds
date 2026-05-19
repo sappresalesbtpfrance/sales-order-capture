@@ -125,6 +125,17 @@ annotate service.SalesOrderRequests with {
     Common.ValueListWithFixedValues: true
   );
 
+  salesOrderType @(
+    Common.ValueList: {
+      CollectionPath: 'VH_SalesOrderType',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut', LocalDataProperty: salesOrderType, ValueListProperty: 'code' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'description' },
+      ],
+    },
+    Common.ValueListWithFixedValues: true
+  );
+
   requestNumber @(
     Common.ValueList: {
       CollectionPath: 'SalesOrderRequests',

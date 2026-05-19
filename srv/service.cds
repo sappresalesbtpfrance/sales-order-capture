@@ -73,6 +73,11 @@ service SalesOrderCaptureService @(path: '/odata/v4/sales-order-capture') {
     name     : String(50);
   };
 
+  @readonly entity VH_SalesOrderType {
+    key code        : String(4);
+        description : String(60);
+  };
+
   // KPI function for dynamic tile and KPI tag
   type DynamicTileInfo {
     number      : Integer;
