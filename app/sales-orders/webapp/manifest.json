@@ -9,7 +9,7 @@
     "type": "application",
     "i18n": "i18n/i18n.properties",
     "applicationVersion": {
-      "version": "0.0.29"
+      "version": "0.0.38"
     },
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -154,7 +154,7 @@
                   "actions": {
                     "newUpload": {
                       "press": "salesorders.ext.controller.UploadHandler.onOpenUploadDialog",
-                      "text": "{i18n>btnCreer}",
+                      "text": "{{btnCreer}}",
                       "type": "Emphasized",
                       "enabled": true,
                       "visible": true,

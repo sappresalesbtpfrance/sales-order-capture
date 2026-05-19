@@ -323,6 +323,16 @@ annotate service.SalesOrderRequests with @(
             },
             {
                 $Type: 'UI.DataField',
+                Label: 'AI Confidence (%)',
+                Value: docAiConfidence,
+            },
+            {
+                $Type: 'UI.DataField',
+                Label: 'Schema',
+                Value: docAiSchemaName,
+            },
+            {
+                $Type: 'UI.DataField',
                 Label: 'Extraction Log',
                 Value: extractionLog,
             },

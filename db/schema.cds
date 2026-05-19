@@ -66,6 +66,8 @@ entity SalesOrderRequests : cuid, managed {
 
   extractionLog       : LargeString   @title: 'Extraction Log';
   docAiSchemaId       : String(255)   @title: 'Document AI Schema';
+  docAiSchemaName     : String(255)   @title: 'Schema Name';
+  docAiConfidence     : Decimal(5,2)  @title: 'AI Confidence (%)';
   lastSimulatedAt     : Timestamp     @title: 'Last Simulated On';
 
   items               : Composition of many SalesOrderRequestItems on items.request = $self;

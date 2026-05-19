@@ -27,6 +27,11 @@
     "watch-sales-orders": "cds watch --open salesorders/index.html?sap-ui-xx-viewCache=false --livereload false"
   },
   "cds": {
+    "server": {
+      "body_parser": {
+        "limit": "10mb"
+      }
+    },
     "requires": {
       "db": {
         "kind": "sqlite",

@@ -130,12 +130,14 @@ sap.ui.define([
       const n = aFiles.length;
       MessageToast.show(n === 1 ? "1 document soumis pour traitement" : `${n} documents soumis pour traitement`);
 
+      const oODataModel = oView.getModel();
+      const sServiceUrl = new URL(oODataModel.getServiceUrl(), document.baseURI).href.replace(/\/$/, "");
       const uploadOne = (fileEntry) => new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => {
-          const base64    = e.target.result.split(",")[1];
-          const schemaId  = schemaMode === "global" ? globalSchemaId : (fileEntry.schemaId || "");
-          fetch("/odata/v4/sales-order-capture/uploadFiles", {
+          const base64   = e.target.result.split(",")[1];
+          const schemaId = schemaMode === "global" ? globalSchemaId : (fileEntry.schemaId || "");
+          fetch(sServiceUrl + "/uploadFiles", {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
             body:    JSON.stringify({

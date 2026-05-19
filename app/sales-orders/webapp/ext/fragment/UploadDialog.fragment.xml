@@ -87,7 +87,7 @@
         </VBox>
 
         <HBox justifyContent="Center" visible="{upload>/schemasLoading}" class="sapUiSmallMarginTop">
-          <BusyIndicator size="Small"/>
+          <BusyIndicator/>
           <Text text="Chargement des schémas…" class="sapUiSmallMarginBegin"/>
         </HBox>
 

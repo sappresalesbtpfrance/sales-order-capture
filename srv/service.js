@@ -1,4 +1,5 @@
 const cds = require('@sap/cds');
+const { randomUUID } = require('crypto');
 
 const PROCESSING_STATUS = {
   NEW:             'NEW',
@@ -310,11 +311,15 @@ module.exports = cds.service.impl(async function () {
   async function getDocAiToken() {
     if (_docAiToken && Date.now() < _tokenExpiry - 30000) return _docAiToken;
     const cfg = cds.env.requires?.DOCUMENT_AI?.credentials || {};
-    const tokenUrl = cfg.tokenServiceUrl || cfg['token-service-url'];
+    // Support both: dev config style (tokenServiceUrl/clientId/clientSecret)
+    // and VCAP binding style (uaa.url / uaa.clientid / uaa.clientsecret)
+    const tokenUrl  = cfg.tokenServiceUrl || cfg['token-service-url'] || `${cfg.uaa?.url}/oauth/token`;
+    const clientId  = cfg.clientId  || cfg.uaa?.clientid;
+    const clientSec = cfg.clientSecret || cfg.uaa?.clientsecret;
     const res = await fetch(`${tokenUrl}?grant_type=client_credentials`, {
       method: 'POST',
       headers: {
-        Authorization: 'Basic ' + Buffer.from(`${cfg.clientId}:${cfg.clientSecret}`).toString('base64'),
+        Authorization: 'Basic ' + Buffer.from(`${clientId}:${clientSec}`).toString('base64'),
         'Content-Type': 'application/x-www-form-urlencoded'
       }
     });
@@ -347,18 +352,17 @@ module.exports = cds.service.impl(async function () {
 
     const results = [];
     const errors  = [];
+    const log = cds.log('docai');
 
     await Promise.all(files.map(async (file) => {
       try {
-        const record = await INSERT.into(SalesOrderRequests).entries({
-          fileName:        file.fileName,
-          processingStatus: PROCESSING_STATUS.IN_PROCESS,
-          docAiSchemaId:   file.schemaId || null,
-        });
-        const ID = record.ID ?? record[0]?.ID;
+        const newEntry = { ID: randomUUID(), fileName: file.fileName, processingStatus: PROCESSING_STATUS.IN_PROCESS, docAiSchemaId: file.schemaId || null };
+        await INSERT.into(SalesOrderRequests).entries(newEntry);
+        const ID = newEntry.ID;
+        log.info(`Created SalesOrderRequest ${ID} for file ${file.fileName}`);
 
         _extractAsync(ID, file).catch(async (err) => {
-          cds.log('sales-order-capture').error(`Extraction failed for ${file.fileName}:`, err);
+          log.error(`Uncaught extraction error for ${file.fileName}:`, err);
           await UPDATE(SalesOrderRequests, ID).with({
             processingStatus: PROCESSING_STATUS.ERROR,
             extractionLog:    err.message,
@@ -499,12 +503,160 @@ module.exports = cds.service.impl(async function () {
     };
   }
 
-  async function _extractAsync(requestId, file) {
-    // Document AI extraction — implemented once schema/model confirmed in the tenant.
-    // Until then, marks the record as DATA_INCOMPLETE for manual entry.
-    await UPDATE(SalesOrderRequests, requestId).with({
-      processingStatus: PROCESSING_STATUS.DATA_INCOMPLETE,
-      extractionLog:    'Document AI extraction not yet configured — please fill in data manually.',
+  async function _submitDocAiJob(fileBuffer, fileName, mimeType, schemaId) {
+    const token   = await getDocAiToken();
+    const baseUrl = (cds.env.requires?.DOCUMENT_AI?.credentials?.url || 'https://eu10.doc.cloud.sap').replace(/\/$/, '');
+
+    const form = new FormData();
+    form.append('file', new Blob([fileBuffer], { type: mimeType }), fileName);
+
+    const options = schemaId
+      ? { clientId: 'default', schemaId, receivedDate: new Date().toISOString().split('T')[0] }
+      : {
+          clientId: 'default',
+          documentType: 'purchaseOrder',
+          receivedDate: new Date().toISOString().split('T')[0],
+          extraction: {
+            headerFields: [
+              'documentNumber', 'documentDate', 'deliveryDate',
+              'netAmount', 'grossAmount', 'currencyCode',
+              'senderName', 'senderId',
+              'senderStreet', 'senderHouseNumber', 'senderPostalCode', 'senderCity', 'senderCountryCode',
+              'shipToName', 'shipToStreet', 'shipToHouseNumber', 'shipToPostalCode', 'shipToCity', 'shipToCountryCode',
+            ],
+            lineItemFields: [
+              'description', 'customerMaterialNumber', 'quantity', 'unitOfMeasure', 'unitPrice', 'netAmount', 'itemNumber',
+            ],
+          },
+        };
+    form.append('options', JSON.stringify(options));
+
+    const res = await fetch(`${baseUrl}/document-information-extraction/v1/document/jobs`, {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body:    form,
     });
+    if (!res.ok) throw new Error(`Document AI submit failed: ${res.status} ${await res.text()}`);
+    const data = await res.json();
+    return data.id;
+  }
+
+  async function _pollDocAiJob(jobId, maxAttempts = 60) {
+    const baseUrl = (cds.env.requires?.DOCUMENT_AI?.credentials?.url || 'https://eu10.doc.cloud.sap').replace(/\/$/, '');
+    for (let i = 0; i < maxAttempts; i++) {
+      const token = await getDocAiToken();
+      const res   = await fetch(
+        `${baseUrl}/document-information-extraction/v1/document/jobs/${jobId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) throw new Error(`Document AI poll failed: ${res.status}`);
+      const data = await res.json();
+      if (data.status === 'DONE')   return data.extraction;
+      if (data.status === 'FAILED') throw new Error(`Document AI job ${jobId} failed`);
+      await new Promise(r => setTimeout(r, 5000));
+    }
+    throw new Error(`Document AI polling timeout for job ${jobId}`);
+  }
+
+  function _mapDocAiToSalesOrder(extraction, schemaId) {
+    const log = cds.log('docai');
+    log.info('Raw extraction:', JSON.stringify(extraction).substring(0, 500));
+
+    const h      = extraction?.headerFields || [];
+    const field  = (name) => h.find(f => f.name === name)?.value ?? null;
+    const confidence = h.length
+      ? Math.round((h.reduce((s, f) => s + (f.confidence ?? 0), 0) / h.length) * 10000) / 100
+      : null;
+
+    const parseDate = (v) => {
+      if (!v) return null;
+      const d = new Date(v);
+      return isNaN(d) ? null : d.toISOString().split('T')[0];
+    };
+
+    const items = (extraction?.lineItems || []).map((lineFields, idx) => {
+      const lf = (name) => (Array.isArray(lineFields) ? lineFields : []).find(f => f.name === name)?.value ?? null;
+      return {
+        itemNumber:            lf('itemNumber') || String((idx + 1) * 10).padStart(6, '0'),
+        material:              lf('customerMaterialNumber'),
+        materialDescription:   lf('description'),
+        requestedQuantity:     parseFloat(lf('quantity')) || null,
+        requestedQuantityUnit: lf('unitOfMeasure') || 'EA',
+        netAmount:             parseFloat(lf('netAmount')) || null,
+      };
+    });
+
+    return {
+      purchaseOrderByCustomer:     field('documentNumber'),
+      purchaseOrderByCustomerDate: parseDate(field('documentDate')),
+      requestedDeliveryDate:       parseDate(field('deliveryDate')),
+      transactionCurrency:         field('currencyCode'),
+      extractedNetAmount:          parseFloat(field('netAmount')) || null,
+      soldToPartyName:             field('senderName'),
+      soldToStreet:                field('senderStreet'),
+      soldToHouseNumber:           field('senderHouseNumber'),
+      soldToPostalCode:            field('senderPostalCode'),
+      soldToCity:                  field('senderCity'),
+      soldToCountry:               field('senderCountryCode'),
+      shipToPartyName:             field('shipToName'),
+      shipToStreet:                field('shipToStreet'),
+      shipToHouseNumber:           field('shipToHouseNumber'),
+      shipToPostalCode:            field('shipToPostalCode'),
+      shipToCity:                  field('shipToCity'),
+      shipToCountry:               field('shipToCountryCode'),
+      docAiConfidence:             confidence,
+      items,
+    };
+  }
+
+  async function _extractAsync(requestId, file) {
+    const log = cds.log('docai');
+    log.info(`Starting extraction for ${requestId}, file: ${file.fileName}`);
+
+    const record = await SELECT.one.from(SalesOrderRequests, requestId);
+    if (!record) { log.warn(`Record ${requestId} not found`); return; }
+
+    if (!file.content) {
+      log.info(`No file content for ${requestId} — marking incomplete`);
+      await UPDATE(SalesOrderRequests, requestId).with({
+        processingStatus: PROCESSING_STATUS.DATA_INCOMPLETE,
+        extractionLog:    'File content not available for re-extraction. Please upload the document again.',
+      });
+      return;
+    }
+
+    try {
+      const fileBuffer = Buffer.from(file.content, 'base64');
+      const mimeType   = file.mimeType || 'application/pdf';
+      const schemaId   = record.docAiSchemaId || null;
+
+      log.info(`Submitting Document AI job for ${requestId}, mimeType: ${mimeType}, schemaId: ${schemaId}`);
+      const jobId = await _submitDocAiJob(fileBuffer, file.fileName, mimeType, schemaId);
+      log.info(`Document AI job ${jobId} submitted for ${requestId}, polling...`);
+      const extraction = await _pollDocAiJob(jobId);
+      log.info(`Document AI job ${jobId} DONE for ${requestId}`);
+
+      const mapped = _mapDocAiToSalesOrder(extraction, schemaId);
+      const { items, ...headerFields } = mapped;
+
+      await UPDATE(SalesOrderRequests, requestId).with({
+        ...headerFields,
+        processingStatus: PROCESSING_STATUS.DATA_INCOMPLETE,
+        extractionLog:    `Document AI extraction completed. Confidence: ${headerFields.docAiConfidence ?? 'N/A'}%. Please review and complete missing fields.`,
+      });
+
+      if (items && items.length > 0) {
+        await INSERT.into(SalesOrderRequestItems).entries(
+          items.map(item => ({ ...item, request_ID: requestId }))
+        );
+      }
+      log.info(`Extraction complete for ${requestId}: ${items?.length ?? 0} items, confidence: ${headerFields.docAiConfidence}`);
+    } catch (err) {
+      log.error(`Extraction failed for ${requestId}: ${err.message}`);
+      await UPDATE(SalesOrderRequests, requestId).with({
+        processingStatus: PROCESSING_STATUS.DATA_INCOMPLETE,
+        extractionLog:    `Document AI extraction failed: ${err.message}. Please fill in data manually.`,
+      });
+    }
   }
 });

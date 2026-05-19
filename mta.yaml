@@ -1,6 +1,6 @@
 _schema-version: "3.1"
 ID: sales-order-capture
-version: 1.0.33
+version: 1.0.47
 description: Automatic extraction of Sales Orders from documents via SAP Document AI
 
 build-parameters:
@@ -25,6 +25,7 @@ modules:
     properties:
       CDS_ENV: production
       NODE_ENV: production
+      CDS_SERVER_BODY_PARSER_LIMIT: 10mb
     build-parameters:
       builder: npm
       ignore:

@@ -1,31 +1,38 @@
 sap.ui.define([
   "sap/ui/core/Fragment",
   "sap/m/MessageToast",
-  "sap/ui/model/json/JSONModel"
-], function (Fragment, MessageToast, JSONModel) {
+  "sap/ui/model/json/JSONModel",
+  "sap/ui/core/Element"
+], function (Fragment, MessageToast, JSONModel, Element) {
   "use strict";
 
   var _dialogPromise = null;
+  var _oView = null;
 
-  function _getView(oEvent) {
-    var oSource = oEvent.getSource();
-    var oView = null;
-    var oParent = oSource;
-    while (oParent) {
-      if (oParent.isA && oParent.isA("sap.ui.core.mvc.View")) {
-        oView = oParent;
-        break;
+  function _findListReportView() {
+    var oFound = null;
+    Element.registry.forEach(function (oEl) {
+      if (!oFound && oEl.isA("sap.ui.core.mvc.View") &&
+          oEl.getViewName && oEl.getViewName() &&
+          oEl.getViewName().indexOf("sap.fe.templates.ListReport") >= 0) {
+        oFound = oEl;
       }
-      oParent = oParent.getParent ? oParent.getParent() : null;
-    }
-    return oView;
+    });
+    return oFound;
   }
 
   return {
 
-    onOpenUploadDialog: function (oEvent) {
-      var oView = _getView(oEvent);
-      if (!oView) return;
+    // OData V4 FE calls this as: handler(oBindingContext, aSelectedContexts)
+    onOpenUploadDialog: function () {
+      if (!_oView) {
+        _oView = _findListReportView();
+      }
+      var oView = _oView;
+      if (!oView) {
+        MessageToast.show("Impossible d'ouvrir le dialog.");
+        return;
+      }
 
       if (!_dialogPromise) {
         _dialogPromise = Fragment.load({
@@ -60,9 +67,8 @@ sap.ui.define([
 
         oDialog.open();
 
-        // Load schemas from Document AI
-        var oModel = oView.getModel();
-        var oBinding = oModel.bindContext("/getDocumentAISchemas(...)");
+        var oODataModel = oView.getModel();
+        var oBinding = oODataModel.bindContext("/getDocumentAISchemas(...)");
         oBinding.execute().then(function () {
           var schemas = oBinding.getBoundContext().getObject()?.value || [];
           oUploadModel.setProperty("/schemas", [
@@ -77,16 +83,16 @@ sap.ui.define([
     },
 
     onFileSelectionChange: function (oEvent) {
+      if (!_oView) return;
       var oFiles = oEvent.getParameter("files") || [];
       var aFiles = Array.from(oFiles).map(function (f) {
         return { name: f.name, schemaId: "", _file: f };
       });
-      var oView = _getView(oEvent) || oEvent.getSource().getParent();
-      var oUpload = oView && oView.getModel("upload");
+      var oUpload = _oView.getModel("upload");
       if (!oUpload) return;
       oUpload.setProperty("/files", aFiles);
 
-      var oStrip = Fragment.byId(oView.getId(), "fileCountStrip");
+      var oStrip = Fragment.byId(_oView.getId(), "fileCountStrip");
       if (oStrip) {
         var n = aFiles.length;
         oStrip.setText(n === 1 ? "1 fichier sélectionné" : n + " fichiers sélectionnés");
@@ -100,10 +106,9 @@ sap.ui.define([
 
     onSchemaModeChange: function () {},
 
-    onSubmitUpload: function (oEvent) {
-      var oView = _getView(oEvent) || oEvent.getSource().getParent();
-      if (!oView) return;
-      var oUpload = oView.getModel("upload");
+    onSubmitUpload: function () {
+      if (!_oView) return;
+      var oUpload = _oView.getModel("upload");
       var aFiles  = oUpload.getProperty("/files");
       if (!aFiles || aFiles.length === 0) return;
 
@@ -112,19 +117,22 @@ sap.ui.define([
 
       oUpload.setProperty("/submitting", true);
 
-      var oDialog = Fragment.byId(oView.getId(), "uploadDialog");
+      var oDialog = Fragment.byId(_oView.getId(), "uploadDialog");
       if (oDialog) oDialog.close();
 
       var n = aFiles.length;
       MessageToast.show(n === 1 ? "1 document soumis pour traitement" : n + " documents soumis pour traitement");
 
+      var oView = _oView;
+      var oODataModel = oView.getModel();
+      var sServiceUrl = new URL(oODataModel.getServiceUrl(), document.baseURI).href.replace(/\/$/, "");
       var uploadOne = function (fileEntry) {
         return new Promise(function (resolve) {
           var reader = new FileReader();
           reader.onload = function (e) {
             var base64   = e.target.result.split(",")[1];
             var schemaId = schemaMode === "global" ? globalSchemaId : (fileEntry.schemaId || "");
-            fetch("/odata/v4/sales-order-capture/uploadFiles", {
+            fetch(sServiceUrl + "/uploadFiles", {
               method:  "POST",
               headers: { "Content-Type": "application/json" },
               body:    JSON.stringify({
@@ -156,8 +164,9 @@ sap.ui.define([
       });
     },
 
-    onCancelUpload: function (oEvent) {
-      var oDialog = oEvent.getSource().getParent();
+    onCancelUpload: function () {
+      if (!_oView) return;
+      var oDialog = Fragment.byId(_oView.getId(), "uploadDialog");
       if (oDialog) oDialog.close();
     }
   };
