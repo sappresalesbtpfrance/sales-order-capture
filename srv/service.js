@@ -28,23 +28,49 @@ const STATUS_CRITICALITY = {
 module.exports = cds.service.impl(async function () {
   const { SalesOrderRequests, SalesOrderRequestItems, VH_SalesOrganization, VH_DistributionChannel, VH_Customer, VH_Division, VH_CompanyCode, VH_Plant, VH_Country, VH_ProcessingStatus, VH_SalesOrderType, Currencies } = this.entities;
 
-  // ── Value Help handlers (delegated to S/4, language-aware) ────────────────
-  const _readVH = async (entityName, keyField, nameField, req) => {
-    const lang = (req.locale || 'en').toUpperCase();
-    const s4   = await cds.connect.to(entityName.startsWith('VH_SalesOrg') ? 'API_SALESORGANIZATION_SRV' : 'API_DISTRIBUTIONCHANNEL_SRV');
-    const table = entityName.startsWith('VH_SalesOrg') ? 'A_SalesOrganizationText' : 'A_DistributionChannelText';
-    let rows = await s4.run(SELECT.from(table).where({ Language: lang }));
-    if (!rows.length) rows = await s4.run(SELECT.from(table).where({ Language: 'EN' }));
-    return rows.map(r => ({ [keyField]: r[keyField], [nameField]: r[nameField], Language: r.Language }));
+  // ── Value Help helpers ────────────────────────────────────────────────────
+  // Fiori sends typed text as $search → req.query.SELECT.search (array of tokens)
+  // or as $filter → req.query.SELECT.where. Read both.
+  const _getVhSearch = (req) => {
+    const fromSearch = req.query?.SELECT?.search;
+    if (fromSearch?.length) return fromSearch.map(t => t.val ?? t).join(' ').toLowerCase();
+    const whereStr = JSON.stringify(req.query?.SELECT?.where || '');
+    const m = whereStr.match(/"val"\s*:\s*"([^"]+)"/);
+    return m ? m[1].toLowerCase() : null;
   };
 
-  this.on('READ', VH_SalesOrganization,  (req) => _readVH('VH_SalesOrganization',  'SalesOrganization',  'SalesOrganizationName',  req));
-  this.on('READ', VH_DistributionChannel, (req) => _readVH('VH_DistributionChannel', 'DistributionChannel', 'DistributionChannelName', req));
+  const _filterRows = (rows, search, ...fields) => {
+    if (!search) return rows;
+    return rows.filter(r => fields.some(f => r[f]?.toLowerCase().includes(search)));
+  };
+
+  // ── Value Help handlers (delegated to S/4, language-aware) ────────────────
+  this.on('READ', VH_SalesOrganization, async (req) => {
+    const lang = (req.locale || 'en').toUpperCase();
+    const s4 = await cds.connect.to('API_SALESORGANIZATION_SRV');
+    let rows = await s4.run(SELECT.from('A_SalesOrganizationText').where({ Language: lang }));
+    if (!rows.length) rows = await s4.run(SELECT.from('A_SalesOrganizationText').where({ Language: 'EN' }));
+    const search = _getVhSearch(req);
+    return _filterRows(rows, search, 'SalesOrganization', 'SalesOrganizationName')
+      .map(r => ({ SalesOrganization: r.SalesOrganization, SalesOrganizationName: r.SalesOrganizationName, Language: r.Language }));
+  });
+
+  this.on('READ', VH_DistributionChannel, async (req) => {
+    const lang = (req.locale || 'en').toUpperCase();
+    const s4 = await cds.connect.to('API_DISTRIBUTIONCHANNEL_SRV');
+    let rows = await s4.run(SELECT.from('A_DistributionChannelText').where({ Language: lang }));
+    if (!rows.length) rows = await s4.run(SELECT.from('A_DistributionChannelText').where({ Language: 'EN' }));
+    const search = _getVhSearch(req);
+    return _filterRows(rows, search, 'DistributionChannel', 'DistributionChannelName')
+      .map(r => ({ DistributionChannel: r.DistributionChannel, DistributionChannelName: r.DistributionChannelName, Language: r.Language }));
+  });
 
   this.on('READ', VH_Customer, async (req) => {
     const bp = await cds.connect.to('API_BUSINESS_PARTNER');
     let rows = await bp.run(SELECT.from('API_BUSINESS_PARTNER.A_Customer').columns('Customer', 'CustomerName'));
-    return rows.map(r => ({ Customer: r.Customer, CustomerName: r.CustomerName }));
+    const search = _getVhSearch(req);
+    return _filterRows(rows, search, 'Customer', 'CustomerName')
+      .map(r => ({ Customer: r.Customer, CustomerName: r.CustomerName }));
   });
 
   this.on('READ', VH_Division, async (req) => {
@@ -52,46 +78,35 @@ module.exports = cds.service.impl(async function () {
     const s4 = await cds.connect.to('API_DIVISION_SRV');
     let rows = await s4.run(SELECT.from('API_DIVISION_SRV.A_DivisionText').where({ Language: lang }));
     if (!rows.length) rows = await s4.run(SELECT.from('API_DIVISION_SRV.A_DivisionText').where({ Language: 'EN' }));
-    return rows.map(r => ({ Division: r.Division, DivisionName: r.DivisionName, Language: r.Language }));
+    const search = _getVhSearch(req);
+    return _filterRows(rows, search, 'Division', 'DivisionName')
+      .map(r => ({ Division: r.Division, DivisionName: r.DivisionName, Language: r.Language }));
   });
 
   this.on('READ', VH_CompanyCode, async (req) => {
     const s4 = await cds.connect.to('API_COMPANYCODE_SRV');
-    const rows = await s4.run(SELECT.from('API_COMPANYCODE_SRV.A_CompanyCode').columns('CompanyCode', 'CompanyCodeName'));
-    return rows.map(r => ({ CompanyCode: r.CompanyCode, CompanyCodeName: r.CompanyCodeName }));
+    let rows = await s4.run(SELECT.from('API_COMPANYCODE_SRV.A_CompanyCode').columns('CompanyCode', 'CompanyCodeName'));
+    const search = _getVhSearch(req);
+    return _filterRows(rows, search, 'CompanyCode', 'CompanyCodeName')
+      .map(r => ({ CompanyCode: r.CompanyCode, CompanyCodeName: r.CompanyCodeName }));
   });
 
   this.on('READ', VH_Plant, async (req) => {
     const s4 = await cds.connect.to('API_PLANT_SRV');
-    const rows = await s4.run(SELECT.from('API_PLANT_SRV.A_Plant').columns('Plant', 'PlantName'));
-    return rows.map(r => ({ Plant: r.Plant, PlantName: r.PlantName }));
+    let rows = await s4.run(SELECT.from('API_PLANT_SRV.A_Plant').columns('Plant', 'PlantName'));
+    const search = _getVhSearch(req);
+    return _filterRows(rows, search, 'Plant', 'PlantName')
+      .map(r => ({ Plant: r.Plant, PlantName: r.PlantName }));
   });
 
   this.on('READ', VH_Country, async (req) => {
     const lang = (req.locale || 'en').toUpperCase();
     const s4 = await cds.connect.to('API_COUNTRY_SRV');
-
-    // Extract search value from where clause (Fiori VH sends filter on CountryName or Country)
-    const getSearchVal = (where) => {
-      if (!where) return null;
-      const str = JSON.stringify(where);
-      const m = str.match(/"val"\s*:\s*"([^"]+)"/);
-      return m ? m[1] : null;
-    };
-    const searchVal = getSearchVal(req.query?.SELECT?.where);
-
     let rows = await s4.run(SELECT.from('API_COUNTRY_SRV.A_CountryText').where({ Language: lang }).limit(300));
     if (!rows.length) rows = await s4.run(SELECT.from('API_COUNTRY_SRV.A_CountryText').where({ Language: 'EN' }).limit(300));
-
-    if (searchVal) {
-      const sv = searchVal.toLowerCase();
-      rows = rows.filter(r =>
-        r.Country?.toLowerCase().includes(sv) ||
-        r.CountryName?.toLowerCase().includes(sv)
-      );
-    }
-
-    return rows.map(r => ({ Country: r.Country, CountryName: r.CountryName }));
+    const search = _getVhSearch(req);
+    return _filterRows(rows, search, 'Country', 'CountryName')
+      .map(r => ({ Country: r.Country, CountryName: r.CountryName }));
   });
 
   const SALES_ORDER_TYPES = [
@@ -110,15 +125,8 @@ module.exports = cds.service.impl(async function () {
   ];
 
   this.on('READ', VH_SalesOrderType, (req) => {
-    const searchVal = (() => {
-      const str = JSON.stringify(req.query?.SELECT?.where || '');
-      const m = str.match(/"val"\s*:\s*"([^"]+)"/);
-      return m ? m[1].toLowerCase() : null;
-    })();
-    const rows = searchVal
-      ? SALES_ORDER_TYPES.filter(r => r.code.toLowerCase().includes(searchVal) || r.description.toLowerCase().includes(searchVal))
-      : SALES_ORDER_TYPES;
-    return rows;
+    const search = _getVhSearch(req);
+    return _filterRows(SALES_ORDER_TYPES, search, 'code', 'description');
   });
 
   const PROCESSING_STATUS_LABELS = {
@@ -129,7 +137,9 @@ module.exports = cds.service.impl(async function () {
 
   this.on('READ', VH_ProcessingStatus, async (req) => {
     const labels = PROCESSING_STATUS_LABELS[req.locale] ?? PROCESSING_STATUS_LABELS['en'];
-    return Object.entries(labels).map(([code, name]) => ({ code, name }));
+    const rows = Object.entries(labels).map(([code, name]) => ({ code, name }));
+    const search = _getVhSearch(req);
+    return _filterRows(rows, search, 'code', 'name');
   });
 
   // ── Currencies (ISO 4217 static list) ────────────────────────────────────
